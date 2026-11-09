@@ -33,12 +33,15 @@ function createNewProjectPrompt() {
   document.getElementById("manual-project-title").textContent = name.trim();
 
   // Re-render components with blank state
+  document.getElementById("bg-done-counter").textContent = "0/0 جاهز";
+  document.getElementById("fg-done-counter").textContent = "0/0 جاهز";
+  document.getElementById("clip-done-counter").textContent = "0/0 جاهز";
+  document.getElementById("scenes-58-list").innerHTML = '<div class="p-6 text-center text-xs text-slate-400">✨ المشروع فارغ حالياً — استورد سكريبت كلود للبدء.</div>';
+
   renderPromptBoxes();
   renderAssetMatrix();
-  renderSceneList("");
   selectScene(1);
 
-  alert(`✨ تم إنشاء المشروع الجديد: "${name.trim()}" بنجاح!\nالمشروع الآن على صفحة بيضاء نظيفة تماماً وينتظر رفع ملف المشاهد والصوت.`);
   switchManualSubtab("prompts");
   openClaudeModal();
 }
@@ -319,7 +322,15 @@ function renderSceneList(query) {
 
 function selectScene(id) {
   selectedSceneId = id;
-  const s = DATA.scenes.find((x) => x.id === id) || DATA.scenes[0];
+  const s = DATA.scenes.find((x) => x.id === id);
+  if (!s) {
+    document.getElementById("player-scene-title").textContent = "مشروع جديد (فارغ)";
+    document.getElementById("player-time-badge").textContent = "00:00.0";
+    document.getElementById("inspector-caption-input").value = "";
+    document.getElementById("inspector-time-input").value = "";
+    document.getElementById("inspector-layers").innerHTML = '<span class="text-xs text-slate-400">بانتظار إضافة المشاهد...</span>';
+    return;
+  }
   document.getElementById("player-scene-title").textContent = `Scene #${String(s.id).padStart(2, "0")} — ${s.caption}`;
   document.getElementById("player-time-badge").textContent = `${s.t0.toFixed(1)}s – ${s.t1.toFixed(1)}s (${s.duration}s)`;
   document.getElementById("inspector-caption-input").value = s.caption;
