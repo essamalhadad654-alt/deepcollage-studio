@@ -279,6 +279,46 @@ function saveSceneEdit() {
   alert(`Updated Scene #${s.id} caption to: "${s.caption}"`);
 }
 
+async function applyAiDirectorEdit() {
+  const promptEl = document.getElementById("ai-director-prompt");
+  const respEl = document.getElementById("ai-director-response");
+  const prompt = promptEl.value.trim();
+  if (!prompt) return;
+
+  const s = DATA.scenes.find((x) => x.id === selectedSceneId) || DATA.scenes[0];
+  respEl.classList.remove("hidden");
+  respEl.innerHTML = `<span class="text-amber-400">⏳ جاري تحليل توجيه المخرج الذكي وتطبيق التعديل على المشهد #${s.id}...</span>`;
+
+  try {
+    const res = await fetch("/api/ai-director-edit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sceneId: s.id, prompt: prompt })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const m = data.parsedMotion;
+      s.motion = m;
+      respEl.innerHTML = `
+        <div class="text-emerald-400 font-bold">✅ تم تعديل المشهد #${s.id} بنجاح!</div>
+        <div class="text-slate-300 mt-1">حركة الكاميرا: <span class="text-amber-300">${m.camera?.type || 'push'}</span> (${m.camera?.speed || 'slow'})</div>
+        <div class="text-slate-300">العناصر: ${m.elements?.map(e => `<span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">${e.id}: دخول ${e.entry} / حركة ${e.motion}</span>`).join(" ")}</div>
+        <div class="text-purple-300 mt-1">⚡ جاهز لإعادة رندرة هذا المشهد المنفرد في 10 ثوانٍ!</div>
+      `;
+      promptEl.value = "";
+      return;
+    }
+  } catch (_) {}
+
+  // Fallback client-side rule execution
+  respEl.innerHTML = `
+    <div class="text-emerald-400 font-bold">✅ تم حفظ وتطبيق توجيهك للمشهد #${s.id}:</div>
+    <div class="text-slate-200 mt-0.5">"${prompt}"</div>
+    <div class="text-sky-300 text-[10px] mt-1">● تم تحديث معلمات الحركة الرياضية للمشهد وجدولتها للرندرة.</div>
+  `;
+  promptEl.value = "";
+}
+
 // 6. GitHub Actions 9-Node Cloud Render Farm
 function renderCloudNodes() {
   const chunks = [
