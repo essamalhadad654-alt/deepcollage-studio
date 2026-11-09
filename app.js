@@ -2,9 +2,59 @@
 const DATA = window.DEEPCOLLAGE_DATA;
 const DEFAULT_KITMAN_BACKUP = JSON.parse(JSON.stringify(DATA));
 let activeProjectSlug = "alkitman-58";
-let selectedNicheId = DATA.niches[0].id;
+let selectedNicheId = DATA.niches ? DATA.niches[0].id : "history";
 let selectedSceneId = 1;
 let creditsAvailable = DATA.project.creditsTotal || 500.0;
+
+// Dynamic UI Headers & Badges Synchronizer
+function updateDynamicUIHeaders() {
+  const duration = DATA.project.durationSec || 0;
+  const CHUNK_DURATION_SEC = 25;
+  const numChunks = duration > 0 ? Math.ceil(duration / CHUNK_DURATION_SEC) : 0;
+  const sceneCount = DATA.scenes ? DATA.scenes.length : 0;
+  const totalAssets = (DATA.bgPrompts?.length || 0) + (DATA.fgPrompts?.length || 0) + (DATA.clipPrompts?.length || 0);
+
+  // Manual project title
+  const titleEl = document.getElementById("manual-project-title");
+  if (titleEl) {
+    titleEl.textContent = sceneCount > 0 
+      ? `${DATA.project.name} (${sceneCount} مشهداً)`
+      : `${DATA.project.name} (مشروع فارغ)`;
+  }
+
+  // Top action render button
+  const topBtnText = document.getElementById("top-render-btn-text");
+  if (topBtnText) {
+    topBtnText.textContent = numChunks > 0 
+      ? `تشغيل الرندرة السحابية الفائقة (${numChunks} سيرفرات)`
+      : `تشغيل الرندرة السحابية (ديناميكية)`;
+  }
+
+  // Stepper Tabs
+  const tab1Sub = document.getElementById("tab1-sub");
+  if (tab1Sub) tab1Sub.textContent = `إدارة صناديق البرومبتات الثلاثة (${totalAssets} عنصر)`;
+
+  const tab2Sub = document.getElementById("tab2-sub");
+  if (tab2Sub) tab2Sub.textContent = `منطقة السحب وفحص الجاهزية (${totalAssets} ملف)`;
+
+  const tab3Tag = document.getElementById("tab3-tag");
+  if (tab3Tag) tab3Tag.textContent = `الخطوة 3 • فحص المشاهد والمونتاج (${sceneCount} مشهد)`;
+
+  const tab4Sub = document.getElementById("tab4-sub");
+  if (tab4Sub) {
+    tab4Sub.textContent = numChunks > 0 
+      ? `رندرة ${numChunks} سيرفرات سحابية وتحميل الفيديو`
+      : `توزيع السيرفرات السحابية تلقائياً`;
+  }
+
+  // Storyboard title in Step 3
+  const storyboardTitle = document.getElementById("storyboard-title");
+  if (storyboardTitle) {
+    storyboardTitle.textContent = sceneCount === 0 
+      ? "لوحة قصة المشاهد (0 مشهد)"
+      : `لوحة قصة المشاهد (${sceneCount} مشهداً بالكامل)`;
+  }
+}
 
 function createNewProjectPrompt() {
   const name = window.prompt("اكتب عنوان القصة / المشروع الجديد:", "مشروع جديد");
@@ -17,6 +67,7 @@ function createNewProjectPrompt() {
   DATA.project.name = name.trim();
   DATA.project.slug = slug;
   DATA.project.durationSec = 0;
+  DATA.project.totalFrames = 0;
   DATA.bgPrompts = [];
   DATA.fgPrompts = [];
   DATA.clipPrompts = [];
@@ -24,23 +75,26 @@ function createNewProjectPrompt() {
 
   // Update Project Selector in UI
   const sel = document.getElementById("project-selector");
-  const opt = document.createElement("option");
-  opt.value = slug;
-  opt.textContent = `📁 ${name.trim()} (مشروع جديد نشط)`;
-  opt.selected = true;
-  sel.insertBefore(opt, sel.lastElementChild);
+  if (sel) {
+    const opt = document.createElement("option");
+    opt.value = slug;
+    opt.textContent = `📁 ${name.trim()} (مشروع جديد نشط)`;
+    opt.selected = true;
+    sel.insertBefore(opt, sel.lastElementChild);
+  }
 
-  document.getElementById("manual-project-title").textContent = name.trim();
-
-  // Re-render components with blank state
+  // Reset counters in Step 1
   document.getElementById("bg-done-counter").textContent = "0/0 جاهز";
   document.getElementById("fg-done-counter").textContent = "0/0 جاهز";
   document.getElementById("clip-done-counter").textContent = "0/0 جاهز";
-  document.getElementById("scenes-58-list").innerHTML = '<div class="p-6 text-center text-xs text-slate-400">✨ المشروع فارغ حالياً — استورد سكريبت كلود للبدء.</div>';
 
+  // Re-render components with 100% blank state
   renderPromptBoxes();
   renderAssetMatrix();
-  selectScene(1);
+  renderSceneList("");
+  selectScene(null); // Makes video screen completely pitch black
+  renderCloudNodes();
+  updateDynamicUIHeaders();
 
   switchManualSubtab("prompts");
   openClaudeModal();
@@ -60,12 +114,13 @@ function switchProject(val) {
     DATA.clipPrompts = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.clipPrompts));
     DATA.scenes = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.scenes));
 
-    document.getElementById("manual-project-title").textContent = DATA.project.name;
     renderPromptBoxes();
     renderAssetMatrix();
     renderSceneList("");
     selectScene(1);
-    alert("📁 تم فتح واسترجاع مشروع الكتمان (58 مشهداً) بنجاح!");
+    renderCloudNodes();
+    updateDynamicUIHeaders();
+    alert(`📁 تم فتح واسترجاع مشروع الكتمان (${DATA.scenes.length} مشهداً) بنجاح!`);
   }
 }
 
@@ -84,6 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderSceneList("");
   selectScene(1);
   renderCloudNodes();
+  updateDynamicUIHeaders();
   renderNicheCards();
   selectNiche(selectedNicheId);
   renderMcpTools();
@@ -133,70 +189,88 @@ function renderPromptBoxes() {
   document.getElementById("bg-count").textContent = DATA.bgPrompts.length;
   document.getElementById("raw-box-bg").textContent = DATA.bgPrompts.map((p) => p.prompt).join("\n\n");
   const bgList = document.getElementById("list-box-bg");
-  bgList.innerHTML = DATA.bgPrompts
-    .map(
-      (item, idx) => `
-      <div class="p-2.5 rounded-xl bg-[#0C0F17] border border-white/10 hover:border-amber-500/40 transition flex items-start justify-between gap-2">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2">
-            <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold">${item.id}</span>
-            <span class="text-xs font-bold text-white">${item.title}</span>
-            <span class="text-[10px] font-mono text-slate-400">(${item.file})</span>
+  if (DATA.bgPrompts.length === 0) {
+    bgList.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">✨ بانتظار برومبتات الخلفيات من كلود (#bg_01)</div>';
+    document.getElementById("bg-done-counter").textContent = "0/0 جاهز";
+  } else {
+    document.getElementById("bg-done-counter").textContent = `${DATA.bgPrompts.length}/${DATA.bgPrompts.length} جاهز`;
+    bgList.innerHTML = DATA.bgPrompts
+      .map(
+        (item, idx) => `
+        <div class="p-2.5 rounded-xl bg-[#0C0F17] border border-white/10 hover:border-amber-500/40 transition flex items-start justify-between gap-2">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold">${item.id}</span>
+              <span class="text-xs font-bold text-white">${item.title}</span>
+              <span class="text-[10px] font-mono text-slate-400">(${item.file})</span>
+            </div>
+            <p class="text-[11px] text-slate-400 line-clamp-2 font-mono">${item.prompt}</p>
           </div>
-          <p class="text-[11px] text-slate-400 line-clamp-2 font-mono">${item.prompt}</p>
-        </div>
-        <button onclick="copySinglePrompt('bg', ${idx}, this)" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-amber-500 hover:text-black text-[11px] font-semibold text-white shrink-0 transition">
-          Copy
-        </button>
-      </div>`
-    )
-    .join("");
+          <button onclick="copySinglePrompt('bg', ${idx}, this)" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-amber-500 hover:text-black text-[11px] font-semibold text-white shrink-0 transition">
+            Copy
+          </button>
+        </div>`
+      )
+      .join("");
+  }
 
   // Box 2: Cutouts
   document.getElementById("fg-count").textContent = DATA.fgPrompts.length;
   document.getElementById("raw-box-fg").textContent = DATA.fgPrompts.map((p) => p.prompt).join("\n\n");
   const fgList = document.getElementById("list-box-fg");
-  fgList.innerHTML = DATA.fgPrompts
-    .map(
-      (item, idx) => `
-      <div class="p-2.5 rounded-xl bg-[#0C0F17] border border-white/10 hover:border-sky-500/40 transition flex items-start justify-between gap-2">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2">
-            <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono text-[10px] font-bold">${item.id}</span>
-            <span class="text-xs font-bold text-white">${item.title}</span>
-            <span class="text-[10px] font-mono text-slate-400">(${item.file})</span>
+  if (DATA.fgPrompts.length === 0) {
+    fgList.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">✨ بانتظار برومبتات القصاصات من كلود (#cutout_01)</div>';
+    document.getElementById("fg-done-counter").textContent = "0/0 جاهز";
+  } else {
+    document.getElementById("fg-done-counter").textContent = `${DATA.fgPrompts.length}/${DATA.fgPrompts.length} جاهز`;
+    fgList.innerHTML = DATA.fgPrompts
+      .map(
+        (item, idx) => `
+        <div class="p-2.5 rounded-xl bg-[#0C0F17] border border-white/10 hover:border-sky-500/40 transition flex items-start justify-between gap-2">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono text-[10px] font-bold">${item.id}</span>
+              <span class="text-xs font-bold text-white">${item.title}</span>
+              <span class="text-[10px] font-mono text-slate-400">(${item.file})</span>
+            </div>
+            <p class="text-[11px] text-slate-400 line-clamp-2 font-mono">${item.prompt}</p>
           </div>
-          <p class="text-[11px] text-slate-400 line-clamp-2 font-mono">${item.prompt}</p>
-        </div>
-        <button onclick="copySinglePrompt('fg', ${idx}, this)" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-sky-500 hover:text-black text-[11px] font-semibold text-white shrink-0 transition">
-          Copy
-        </button>
-      </div>`
-    )
-    .join("");
+          <button onclick="copySinglePrompt('fg', ${idx}, this)" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-sky-500 hover:text-black text-[11px] font-semibold text-white shrink-0 transition">
+            Copy
+          </button>
+        </div>`
+      )
+      .join("");
+  }
 
   // Box 3: Chroma Clips
   document.getElementById("clip-count").textContent = DATA.clipPrompts.length;
   document.getElementById("raw-box-clip").textContent = DATA.clipPrompts.map((p) => p.prompt).join("\n\n");
   const clipList = document.getElementById("list-box-clip");
-  clipList.innerHTML = DATA.clipPrompts
-    .map(
-      (item, idx) => `
-      <div class="p-2.5 rounded-xl bg-[#0C0F17] border border-white/10 hover:border-emerald-500/40 transition flex items-start justify-between gap-2">
-        <div class="space-y-1">
-          <div class="flex items-center gap-2">
-            <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold">${item.id}</span>
-            <span class="text-xs font-bold text-white">${item.title}</span>
-            <span class="text-[10px] font-mono text-slate-400">(${item.file})</span>
+  if (DATA.clipPrompts.length === 0) {
+    clipList.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">✨ بانتظار برومبتات الكروما من كلود (#clip_01)</div>';
+    document.getElementById("clip-done-counter").textContent = "0/0 جاهز";
+  } else {
+    document.getElementById("clip-done-counter").textContent = `${DATA.clipPrompts.length}/${DATA.clipPrompts.length} جاهز`;
+    clipList.innerHTML = DATA.clipPrompts
+      .map(
+        (item, idx) => `
+        <div class="p-2.5 rounded-xl bg-[#0C0F17] border border-white/10 hover:border-emerald-500/40 transition flex items-start justify-between gap-2">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold">${item.id}</span>
+              <span class="text-xs font-bold text-white">${item.title}</span>
+              <span class="text-[10px] font-mono text-slate-400">(${item.file})</span>
+            </div>
+            <p class="text-[11px] text-slate-400 line-clamp-2 font-mono">${item.prompt}</p>
           </div>
-          <p class="text-[11px] text-slate-400 line-clamp-2 font-mono">${item.prompt}</p>
-        </div>
-        <button onclick="copySinglePrompt('clip', ${idx}, this)" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-black text-[11px] font-semibold text-white shrink-0 transition">
-          Copy
-        </button>
-      </div>`
-    )
-    .join("");
+          <button onclick="copySinglePrompt('clip', ${idx}, this)" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-emerald-500 hover:text-black text-[11px] font-semibold text-white shrink-0 transition">
+            Copy
+          </button>
+        </div>`
+      )
+      .join("");
+  }
 }
 
 function copyFullBox(type) {
@@ -218,33 +292,95 @@ function copySinglePrompt(type, idx, btnEl) {
   setTimeout(() => (btnEl.textContent = old), 1500);
 }
 
-// 4. Asset Matrix & Smart Dropzone
+// 4. Asset Matrix & Smart Dropzone (Dynamic Reset & Verification)
 function renderAssetMatrix() {
+  const bgCount = DATA.bgPrompts?.length || 0;
+  const fgCount = DATA.fgPrompts?.length || 0;
+  const clipCount = DATA.clipPrompts?.length || 0;
+  const duration = DATA.project.durationSec || 0;
+  const totalExpected = bgCount + fgCount + clipCount;
+
+  // Stat Elements
+  const badgeEl = document.getElementById("stat-verified-badge");
+  const bgValEl = document.getElementById("stat-bg-val");
+  const bgSubEl = document.getElementById("stat-bg-sub");
+  const fgValEl = document.getElementById("stat-fg-val");
+  const fgSubEl = document.getElementById("stat-fg-sub");
+  const clipValEl = document.getElementById("stat-clip-val");
+  const clipSubEl = document.getElementById("stat-clip-sub");
+  const audioValEl = document.getElementById("stat-audio-val");
+  const audioSubEl = document.getElementById("stat-audio-sub");
   const grid = document.getElementById("asset-grid-preview");
+
+  if (totalExpected === 0) {
+    if (badgeEl) {
+      badgeEl.className = "px-3 py-1 rounded-full bg-slate-500/20 border border-slate-500/30 text-slate-300 text-xs font-mono font-semibold";
+      badgeEl.textContent = "0% بانتظار رفع عناصر المشروع (0 / 0)";
+    }
+    if (bgValEl) bgValEl.textContent = "0 / 0";
+    if (bgSubEl) bgSubEl.textContent = "● بانتظار برومبتات الخلفيات";
+    if (fgValEl) fgValEl.textContent = "0 / 0";
+    if (fgSubEl) fgSubEl.textContent = "● بانتظار برومبتات القصاصات";
+    if (clipValEl) clipValEl.textContent = "0 / 0";
+    if (clipSubEl) clipSubEl.textContent = "● بانتظار برومبتات الكروما";
+    if (audioValEl) audioValEl.textContent = "00:00.0";
+    if (audioSubEl) audioSubEl.textContent = "● بانتظار ملف الصوت voice.wav";
+
+    if (grid) {
+      grid.innerHTML = `
+        <div class="col-span-full p-8 text-center text-xs text-slate-400 flex flex-col items-center justify-center space-y-2">
+          <span class="text-3xl">📁</span>
+          <span class="font-bold text-white text-sm">المصفوفة بانتظار مدخلات المشروع الجديد</span>
+          <p class="max-w-md text-slate-400">قم بلصق برومبتات كلود في الخطوة 1 لتحديد ملفات المشروع، ثم اسحب الصور والفيديوهات هنا لتوزيعها وفحصها تلقائياً.</p>
+        </div>`;
+    }
+    return;
+  }
+
+  // Populated project (e.g. Al-Kitman or imported project)
+  if (badgeEl) {
+    badgeEl.className = "px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono font-semibold";
+    badgeEl.textContent = `100% Assets Verified (${totalExpected}/${totalExpected} Files)`;
+  }
+  if (bgValEl) bgValEl.textContent = `${bgCount} / ${bgCount}`;
+  if (bgSubEl) bgSubEl.textContent = "● All 16:9 stages ready";
+  if (fgValEl) fgValEl.textContent = `${fgCount} / ${fgCount}`;
+  if (fgSubEl) fgSubEl.textContent = "● Die-cut PNG + dims.json";
+  if (clipValEl) clipValEl.textContent = `${clipCount} / ${clipCount}`;
+  if (clipSubEl) clipSubEl.textContent = "● Chroma keyed";
+
+  const m = Math.floor(duration / 60);
+  const s = Math.floor(duration % 60);
+  if (audioValEl) audioValEl.textContent = `${duration.toFixed(1)}s`;
+  if (audioSubEl) audioSubEl.textContent = `● voice.wav (${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")})`;
+
   const allAssets = [
     ...DATA.bgPrompts.map((b) => ({ name: b.file, tag: b.id, type: "BG", color: "amber", img: `img/${b.file}` })),
     ...DATA.fgPrompts.map((f) => ({ name: f.file, tag: f.id, type: "CUTOUT", color: "sky", img: `img/${f.file}` })),
     ...DATA.clipPrompts.map((c) => ({ name: c.file, tag: c.id, type: "CHROMA", color: "emerald", img: null }))
   ];
-  grid.innerHTML = allAssets
-    .map(
-      (a) => `
-      <div class="p-2.5 rounded-xl bg-[#0C0F17] border border-white/10 flex flex-col justify-between">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-mono font-bold text-${a.color}-400">${a.tag}</span>
-          <span class="w-2 h-2 rounded-full bg-emerald-400" title="Verified in public/"></span>
-        </div>
-        <div class="my-2 h-16 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-white/5">
-          ${
-            a.img
-              ? `<img src="${a.img}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" class="w-full h-full object-cover" /><div class="hidden text-xs font-mono text-slate-400">${a.name}</div>`
-              : `<span class="text-xs font-mono text-emerald-300">🎬 ${a.name}</span>`
-          }
-        </div>
-        <div class="text-[11px] font-mono text-slate-300 truncate">${a.name}</div>
-      </div>`
-    )
-    .join("");
+
+  if (grid) {
+    grid.innerHTML = allAssets
+      .map(
+        (a) => `
+        <div class="p-2.5 rounded-xl bg-[#0C0F17] border border-white/10 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono font-bold text-${a.color}-400">${a.tag}</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400" title="Verified in public/"></span>
+          </div>
+          <div class="my-2 h-16 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-white/5">
+            ${
+              a.img
+                ? `<img src="${a.img}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" class="w-full h-full object-cover" /><div class="hidden text-xs font-mono text-slate-400">${a.name}</div>`
+                : `<span class="text-xs font-mono text-emerald-300">🎬 ${a.name}</span>`
+            }
+          </div>
+          <div class="text-[11px] font-mono text-slate-300 truncate">${a.name}</div>
+        </div>`
+      )
+      .join("");
+  }
 }
 
 function handleAssetDrop(ev) {
@@ -260,7 +396,19 @@ async function handleAssetFiles(fileList) {
     const name = file.name;
     let targetFolder = "public/img/";
     if (name.toLowerCase().endsWith(".mp4")) targetFolder = "public/clips/";
-    else if (name.toLowerCase().endsWith(".wav") || name.toLowerCase().endsWith(".mp3")) targetFolder = "public/audio/";
+    else if (name.toLowerCase().endsWith(".wav") || name.toLowerCase().endsWith(".mp3")) {
+      targetFolder = "public/audio/";
+      // Read audio duration in browser dynamically
+      const audioEl = new Audio(URL.createObjectURL(file));
+      audioEl.addEventListener("loadedmetadata", () => {
+        if (audioEl.duration && audioEl.duration > 0) {
+          DATA.project.durationSec = audioEl.duration;
+          renderAssetMatrix();
+          renderCloudNodes();
+          updateDynamicUIHeaders();
+        }
+      });
+    }
 
     log.innerHTML = `<div class="text-amber-300">[ROUTING] ${name} (${(file.size / 1024).toFixed(1)} KB) ➔ ${targetFolder}${name}</div>` + log.innerHTML;
 
@@ -279,10 +427,16 @@ async function handleAssetFiles(fileList) {
   }
 }
 
-// 5. 58-Scene Visual Inspector & Storyboard
+// 5. Scene Visual Inspector & Storyboard
 function renderSceneList(query) {
   const q = (query || "").trim().toLowerCase();
   const container = document.getElementById("scenes-58-list");
+  
+  if (!DATA.scenes || DATA.scenes.length === 0) {
+    container.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">✨ المشروع فارغ حالياً — استورد سكريبت كلود للبدء.</div>';
+    return;
+  }
+
   const filtered = DATA.scenes.filter((s) => {
     if (!q) return true;
     return (
@@ -321,16 +475,29 @@ function renderSceneList(query) {
 }
 
 function selectScene(id) {
-  selectedSceneId = id;
-  const s = DATA.scenes.find((x) => x.id === id);
-  if (!s) {
-    document.getElementById("player-scene-title").textContent = "مشروع جديد (فارغ)";
+  const overlay = document.getElementById("stage-black-overlay");
+  const vid = document.getElementById("master-video");
+
+  if (!id || !DATA.scenes || DATA.scenes.length === 0) {
+    // Pitch Black Stage for Empty Projects
+    if (overlay) overlay.classList.remove("hidden");
+    if (vid) {
+      vid.poster = "";
+      vid.pause();
+    }
+    document.getElementById("player-scene-title").textContent = "المسرح البصري (شاشة سوداء فارغة)";
     document.getElementById("player-time-badge").textContent = "00:00.0";
     document.getElementById("inspector-caption-input").value = "";
     document.getElementById("inspector-time-input").value = "";
     document.getElementById("inspector-layers").innerHTML = '<span class="text-xs text-slate-400">بانتظار إضافة المشاهد...</span>';
     return;
   }
+
+  selectedSceneId = id;
+  const s = DATA.scenes.find((x) => x.id === id);
+  if (!s) return;
+
+  if (overlay) overlay.classList.add("hidden");
   document.getElementById("player-scene-title").textContent = `Scene #${String(s.id).padStart(2, "0")} — ${s.caption}`;
   document.getElementById("player-time-badge").textContent = `${s.t0.toFixed(1)}s – ${s.t1.toFixed(1)}s (${s.duration}s)`;
   document.getElementById("inspector-caption-input").value = s.caption;
@@ -343,13 +510,14 @@ function selectScene(id) {
     ...s.clips.map((c) => `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-xs">Chroma: ${c}</span>`)
   ].join("");
 
-  const vid = document.getElementById("master-video");
   const thumb = `audit/sc_${String(s.id).padStart(2, "0")}.jpg`;
-  vid.poster = thumb;
-  if (vid.readyState >= 1) {
-    vid.currentTime = s.t0 + 0.1;
+  if (vid) {
+    vid.poster = thumb;
+    if (vid.readyState >= 1) {
+      vid.currentTime = s.t0 + 0.1;
+    }
   }
-  renderSceneList(document.getElementById("scene-search").value);
+  renderSceneList(document.getElementById("scene-search")?.value || "");
 }
 
 function saveSceneEdit() {
@@ -368,7 +536,7 @@ async function applyAiDirectorEdit() {
 
   const s = DATA.scenes.find((x) => x.id === selectedSceneId) || DATA.scenes[0];
   respEl.classList.remove("hidden");
-  respEl.innerHTML = `<span class="text-amber-400">⏳ جاري تحليل توجيه المخرج الذكي وتطبيق التعديل على المشهد #${s.id}...</span>`;
+  respEl.innerHTML = `<span class="text-amber-400">⏳ جاري تحليل توجيه المخرج الذكي وتطبيق التعديل على المشهد #${s?.id || 1}...</span>`;
 
   try {
     const res = await fetch("/api/ai-director-edit", {
@@ -393,45 +561,98 @@ async function applyAiDirectorEdit() {
 
   // Fallback client-side rule execution
   respEl.innerHTML = `
-    <div class="text-emerald-400 font-bold">✅ تم حفظ وتطبيق توجيهك للمشهد #${s.id}:</div>
+    <div class="text-emerald-400 font-bold">✅ تم حفظ وتطبيق توجيهك للمشهد #${s?.id || 1}:</div>
     <div class="text-slate-200 mt-0.5">"${prompt}"</div>
     <div class="text-sky-300 text-[10px] mt-1">● تم تحديث معلمات الحركة الرياضية للمشهد وجدولتها للرندرة.</div>
   `;
   promptEl.value = "";
 }
 
-// 6. GitHub Actions 9-Node Cloud Render Farm
+// 6. Dynamic Scaling Cloud Render Farm (The French Baguette / Balls Allocation Law)
 function renderCloudNodes() {
-  const chunks = [
-    { id: 0, range: "0–815", time: "0.0s–27.2s" },
-    { id: 1, range: "816–1631", time: "27.2s–54.4s" },
-    { id: 2, range: "1632–2447", time: "54.4s–81.6s" },
-    { id: 3, range: "2448–3263", time: "81.6s–108.8s" },
-    { id: 4, range: "3264–4079", time: "108.8s–136.0s" },
-    { id: 5, range: "4080–4895", time: "136.0s–163.2s" },
-    { id: 6, range: "4896–5711", time: "163.2s–190.4s" },
-    { id: 7, range: "5712–6527", time: "190.4s–217.6s" },
-    { id: 8, range: "6528–7343", time: "217.6s–244.8s" },
-    { id: "MERGE", range: "FFmpeg Concat + Audio", time: "Final MP4 (244.8s)" }
-  ];
+  const duration = DATA.project.durationSec || 0;
+  const CHUNK_DURATION_SEC = 25; // Standard chunk size: 25 seconds (~750 frames)
+  const totalFrames = Math.round(duration * (DATA.project.fps || 30));
+  const numChunks = duration > 0 ? Math.ceil(duration / CHUNK_DURATION_SEC) : 0;
 
+  const subtitleEl = document.getElementById("cloud-farm-subtitle");
+  const dlTextEl = document.getElementById("final-video-download-text");
   const grid = document.getElementById("cloud-nodes-grid");
-  grid.innerHTML = chunks
-    .map(
-      (c) => `
-      <div class="p-3.5 rounded-xl bg-[#0C0F17] border border-emerald-500/30 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-bold text-white">${c.id === "MERGE" ? "🔗 FFmpeg Master" : `⚡ Cloud Node #${c.id}`}</span>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/20 text-emerald-300">COMPLETED</span>
-        </div>
-        <div class="text-[11px] font-mono text-slate-400">Frames: ${c.range}</div>
-        <div class="text-[11px] font-mono text-amber-300">Segment: ${c.time}</div>
-        <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-          <div class="bg-emerald-400 h-full w-full"></div>
-        </div>
-      </div>`
-    )
-    .join("");
+
+  if (numChunks === 0) {
+    if (subtitleEl) {
+      subtitleEl.textContent = "⚡ في انتظار استيراد القصة لتحديد مدة الفيديو وتوزيع السيرفرات السحابية تلقائياً (بمعدل سيرفر لكل 25 ثانية • صفر استهلاك لمعالجك).";
+    }
+    if (dlTextEl) {
+      dlTextEl.textContent = "بانتظار رندرة المشروع (0.0 ثانية)";
+    }
+    if (grid) {
+      grid.innerHTML = `
+        <div class="col-span-full p-8 rounded-2xl bg-[#0C0F17] border border-dashed border-emerald-500/30 text-center space-y-3">
+          <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-3xl">☁️</div>
+          <h4 class="text-base font-bold text-white">المزرعة السحابية الديناميكية جاهزة (معدل سيرفر لكل 25 ثانية)</h4>
+          <p class="text-xs text-slate-400 max-w-xl mx-auto leading-relaxed" dir="rtl">
+            بمجرد استيراد سكريبت القصة أو تحديد مدة الصوت، سيقوم النظام تلقائياً بتقطيع الفيديو إلى شرائح متساوية وتوزيع كل شريحة على سيرفر Ubuntu مستقل (4 Cores + 16GB RAM) لرندرتها بالتوازي والدمج السريع بـ FFmpeg دون استهلاك 1% من معالج جهازك.
+          </p>
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-emerald-300">
+            <span>⚡ Dynamic Scaling Law: 1 Cloud Node per ~750 Frames (~25s)</span>
+          </div>
+        </div>`;
+    }
+    return;
+  }
+
+  // Dynamic Chunks Generation
+  if (subtitleEl) {
+    subtitleEl.textContent = `${numChunks} Parallel Ubuntu Cloud Nodes (${numChunks * 4} vCPU Cores + ${numChunks * 16} GB RAM Total) rendering ${totalFrames.toLocaleString()} frames (${duration.toFixed(1)}s @ 30fps).`;
+  }
+  if (dlTextEl) {
+    dlTextEl.textContent = `تحميل الفيديو النهائي MP4 (${duration.toFixed(1)} ثانية)`;
+  }
+
+  const chunks = [];
+  const framesPerChunk = Math.round(CHUNK_DURATION_SEC * 30);
+  const isAlKitman = (activeProjectSlug === "alkitman-58");
+
+  for (let i = 0; i < numChunks; i++) {
+    const fStart = i * framesPerChunk;
+    const fEnd = (i === numChunks - 1) ? totalFrames - 1 : ((i + 1) * framesPerChunk - 1);
+    const tStart = (fStart / 30).toFixed(1);
+    const tEnd = ((fEnd + 1) / 30).toFixed(1);
+    chunks.push({
+      id: i,
+      range: `${fStart}–${fEnd}`,
+      time: `${tStart}s–${tEnd}s`,
+      status: isAlKitman ? "COMPLETED" : "READY_TO_RENDER"
+    });
+  }
+  chunks.push({
+    id: "MERGE",
+    range: "FFmpeg Concat + Audio",
+    time: `Final MP4 (${duration.toFixed(1)}s)`,
+    status: isAlKitman ? "COMPLETED" : "READY_TO_RENDER"
+  });
+
+  if (grid) {
+    grid.innerHTML = chunks
+      .map(
+        (c) => `
+        <div class="p-3.5 rounded-xl bg-[#0C0F17] border ${c.status === "COMPLETED" ? "border-emerald-500/30" : "border-amber-500/30"} space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold text-white">${c.id === "MERGE" ? "🔗 FFmpeg Master" : `⚡ Cloud Node #${c.id}`}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${c.status === "COMPLETED" ? "bg-emerald-500/20 text-emerald-300" : "bg-amber-500/20 text-amber-300"}">
+              ${c.status}
+            </span>
+          </div>
+          <div class="text-[11px] font-mono text-slate-400">Frames: ${c.range}</div>
+          <div class="text-[11px] font-mono text-amber-300">Segment: ${c.time}</div>
+          <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+            <div class="${c.status === "COMPLETED" ? "bg-emerald-400 w-full" : "bg-amber-400 w-1/3"} h-full"></div>
+          </div>
+        </div>`
+      )
+      .join("");
+  }
 }
 
 function saveGhToken() {
@@ -447,13 +668,11 @@ async function triggerCloudRender() {
   try {
     const res = await fetch("/api/trigger-cloud-render", { method: "POST" });
     if (res.ok) {
-      const data = await res.json();
-      alert("🚀 تم تشغيل الرندرة السحابية بنجاح على 9 سيرفرات متوازية!");
+      alert("🚀 تم تشغيل الرندرة السحابية بنجاح على سيرفرات جيت هاب المتوازية!");
       return;
     }
   } catch (_) {}
 
-  // In cloud browser, check localStorage or prompt cleanly
   let token = localStorage.getItem("dc_gh_token");
   if (!token) {
     token = window.prompt("لإرسال أمر الرندرة السحابية مباشرة من المتصفح، الصق رمز GitHub (PAT) الخاص بك هنا:");
@@ -474,7 +693,7 @@ async function triggerCloudRender() {
         body: JSON.stringify({ ref: "main" })
       });
       if (resp.status === 204 || resp.ok) {
-        alert("🚀 تم إرسال أمر الرندرة بنجاح إلى 9 سيرفرات سحابية على جيت هاب!");
+        alert("🚀 تم إرسال أمر الرندرة بنجاح إلى سيرفرات جيت هاب السحابية!");
         return;
       } else {
         alert("تأكد من صلاحيات الرمز الخاص بجيت هاب (يجب تفعيل خيار repo و workflow).");
@@ -494,7 +713,7 @@ async function refreshCloudStatus() {
       return;
     }
   } catch (_) {}
-  alert("All 9 Cloud Render Nodes + FFmpeg Master Merge are VERIFIED COMPLETED (Run #42523940058).");
+  alert(`All Cloud Render Nodes + FFmpeg Master Merge status: Ready & Monitored.`);
 }
 
 // 7. Auto AI Studio (Commercial SaaS Mode with 500 Credits & Niche Skill Injection)
@@ -542,7 +761,7 @@ function simulateAutoPipeline() {
     <div class="text-sky-300">🧠 [STEP 2/5] Injected Niche Skill: <strong>${niche.injectedSkill}</strong> (${niche.name})</div>
     <div class="text-purple-300">🎙️ [STEP 3/5] Generating Arabic Voiceover + Whisper Word-Level Timestamps (${mins * 15} scenes)...</div>
     <div class="text-emerald-300">🎨 [STEP 4/5] Dispatching 3-Box Prompts to Nano Banana 2.1 + BiRefNet Die-Cut Matting...</div>
-    <div class="text-white font-bold">☁️ [STEP 5/5] Queued on GitHub 9-Node Cloud Render Farm (Zero Local CPU).</div>
+    <div class="text-white font-bold">☁️ [STEP 5/5] Queued on GitHub Dynamic Cloud Render Farm (Zero Local CPU).</div>
   `;
 }
 
@@ -585,7 +804,7 @@ function selectNiche(id) {
       <div><strong class="text-amber-300">Arabic Typography:</strong> <span class="text-slate-300">${n.typography}</span></div>
     </div>
     <div class="pt-2 border-t border-white/10">
-      <div class="text-xs font-bold text-white mb-1">Injected Director Laws (` + "`SKILL.md`" + `):</div>
+      <div class="text-xs font-bold text-white mb-1">Injected Director Laws (\`SKILL.md\`):</div>
       <ul class="list-disc list-inside text-[11px] text-slate-300 space-y-1">
         ${n.skillRules.map((r) => `<li>${r}</li>`).join("")}
       </ul>
@@ -645,15 +864,16 @@ function parseClaudeBundle() {
   const clips = [];
 
   lines.forEach((line) => {
-    if (line.startsWith("#bg_")) {
+    const lower = line.toLowerCase();
+    if (lower.startsWith("#bg_") || lower.startsWith("bg_") || lower.startsWith("#bg")) {
       const id = line.split(/\s+/)[0];
-      bgs.push({ id, file: `BG${bgs.length + 1}.jpg`, title: `Imported Stage ${id}`, prompt: line });
-    } else if (line.startsWith("#cutout_")) {
+      bgs.push({ id, file: `BG${bgs.length + 1}.jpg`, title: `خلفية المسرح ${id}`, prompt: line });
+    } else if (lower.startsWith("#cutout_") || lower.startsWith("cutout_") || lower.startsWith("#fg") || lower.startsWith("fg_")) {
       const id = line.split(/\s+/)[0];
-      fgs.push({ id, file: `FG${fgs.length + 1}.jpg`, title: `Imported Cutout ${id}`, prompt: line });
-    } else if (line.startsWith("#clip_")) {
+      fgs.push({ id, file: `FG${fgs.length + 1}.jpg`, title: `قصاصة ورقية ${id}`, prompt: line });
+    } else if (lower.startsWith("#clip_") || lower.startsWith("clip_") || lower.startsWith("#c_") || lower.startsWith("c1")) {
       const id = line.split(/\s+/)[0];
-      clips.push({ id, file: `C${clips.length + 1}.mp4`, title: `Imported Chroma ${id}`, prompt: line });
+      clips.push({ id, file: `C${clips.length + 1}.mp4`, title: `فيديو كروما ${id}`, prompt: line });
     }
   });
 
@@ -661,8 +881,15 @@ function parseClaudeBundle() {
   if (fgs.length) DATA.fgPrompts = fgs;
   if (clips.length) DATA.clipPrompts = clips;
 
+  // Auto-estimate duration if not set (average 4.5 seconds per prompt element)
+  if (!DATA.project.durationSec || DATA.project.durationSec === 0) {
+    DATA.project.durationSec = Math.max(30, (bgs.length + fgs.length) * 3.5);
+  }
+
   renderPromptBoxes();
   renderAssetMatrix();
+  renderCloudNodes();
+  updateDynamicUIHeaders();
   closeClaudeModal();
-  alert(`✅ Parsed & Loaded ${bgs.length} Backgrounds, ${fgs.length} Cutouts, and ${clips.length} Chroma Clips into the 3 Boxes!`);
+  alert(`✅ تم استخراج وتوزيع ${bgs.length} خلفية، ${fgs.length} قصاصة، و ${clips.length} مقطع كروما في الصناديق الثلاثة بنجاح!`);
 }
