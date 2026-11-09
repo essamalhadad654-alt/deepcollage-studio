@@ -1,8 +1,78 @@
 // DeepCollage Studio v2.5 — Core Application Controller
 const DATA = window.DEEPCOLLAGE_DATA;
+const DEFAULT_KITMAN_BACKUP = JSON.parse(JSON.stringify(DATA));
+let activeProjectSlug = "alkitman-58";
 let selectedNicheId = DATA.niches[0].id;
 let selectedSceneId = 1;
 let creditsAvailable = DATA.project.creditsTotal || 500.0;
+
+function createNewProjectPrompt() {
+  const name = window.prompt("اكتب عنوان القصة / المشروع الجديد:", "مشروع جديد");
+  if (!name || !name.trim()) return;
+
+  const slug = "proj-" + Date.now();
+  activeProjectSlug = slug;
+
+  // Clear current active project data to blank canvas
+  DATA.project.name = name.trim();
+  DATA.project.slug = slug;
+  DATA.project.durationSec = 0;
+  DATA.bgPrompts = [];
+  DATA.fgPrompts = [];
+  DATA.clipPrompts = [];
+  DATA.scenes = [];
+
+  // Update Project Selector in UI
+  const sel = document.getElementById("project-selector");
+  const opt = document.createElement("option");
+  opt.value = slug;
+  opt.textContent = `📁 ${name.trim()} (مشروع جديد نشط)`;
+  opt.selected = true;
+  sel.insertBefore(opt, sel.lastElementChild);
+
+  document.getElementById("manual-project-title").textContent = name.trim();
+
+  // Re-render components with blank state
+  renderPromptBoxes();
+  renderAssetMatrix();
+  renderSceneList("");
+  selectScene(1);
+
+  alert(`✨ تم إنشاء المشروع الجديد: "${name.trim()}" بنجاح!\nالمشروع الآن على صفحة بيضاء نظيفة تماماً وينتظر رفع ملف المشاهد والصوت.`);
+  switchManualSubtab("prompts");
+  openClaudeModal();
+}
+
+function switchProject(val) {
+  if (val === "new-blank") {
+    createNewProjectPrompt();
+    return;
+  }
+  if (val === "alkitman-58") {
+    activeProjectSlug = "alkitman-58";
+    // Restore kitman data
+    DATA.project = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.project));
+    DATA.bgPrompts = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.bgPrompts));
+    DATA.fgPrompts = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.fgPrompts));
+    DATA.clipPrompts = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.clipPrompts));
+    DATA.scenes = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.scenes));
+
+    document.getElementById("manual-project-title").textContent = DATA.project.name;
+    renderPromptBoxes();
+    renderAssetMatrix();
+    renderSceneList("");
+    selectScene(1);
+    alert("📁 تم فتح واسترجاع مشروع الكتمان (58 مشهداً) بنجاح!");
+  }
+}
+
+function saveCurrentProjectArchive() {
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${DATA.project.slug || 'project'}_backup.json`;
+  a.click();
+}
 
 // Initialize on DOM load
 document.addEventListener("DOMContentLoaded", () => {
