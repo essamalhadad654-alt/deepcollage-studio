@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+  command = "echo 'DeepCollage Studio Static Build Ready'"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    X-Frame-Options = "SAMEORIGIN"
