@@ -367,27 +367,41 @@ async function triggerCloudRender() {
     const res = await fetch("/api/trigger-cloud-render", { method: "POST" });
     if (res.ok) {
       const data = await res.json();
-      alert(`🚀 Cloud Render Triggered on GitHub Actions! Run status: ${data.message}`);
+      alert("🚀 تم تشغيل الرندرة السحابية بنجاح على 9 سيرفرات متوازية!");
       return;
     }
   } catch (_) {}
 
-  const token = localStorage.getItem("dc_gh_token");
-  if (token) {
-    const resp = await fetch("https://api.github.com/repos/essamalhadad654-alt/collage-cloud-studio/actions/workflows/render.yml/dispatches", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json"
-      },
-      body: JSON.stringify({ ref: "main" })
-    });
-    if (resp.status === 204) {
-      alert("🚀 Dispatched 9-Node Parallel Render on GitHub Cloud (`essamalhadad654-alt/collage-cloud-studio`)!");
-      return;
+  // In cloud browser, check localStorage or prompt cleanly
+  let token = localStorage.getItem("dc_gh_token");
+  if (!token) {
+    token = window.prompt("لإرسال أمر الرندرة السحابية مباشرة من المتصفح، الصق رمز GitHub (PAT) الخاص بك هنا:");
+    if (token && token.trim()) {
+      localStorage.setItem("dc_gh_token", token.trim());
+      document.getElementById("gh-token-input").value = token.trim();
     }
   }
-  alert("☁️ Cloud Render Farm Ready! (Open via local bridge or add your GitHub PAT in Step 04 to dispatch live workflow runs directly from the browser).");
+
+  if (token) {
+    try {
+      const resp = await fetch("https://api.github.com/repos/essamalhadad654-alt/collage-cloud-studio/actions/workflows/render.yml/dispatches", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json"
+        },
+        body: JSON.stringify({ ref: "main" })
+      });
+      if (resp.status === 204 || resp.ok) {
+        alert("🚀 تم إرسال أمر الرندرة بنجاح إلى 9 سيرفرات سحابية على جيت هاب!");
+        return;
+      } else {
+        alert("تأكد من صلاحيات الرمز الخاص بجيت هاب (يجب تفعيل خيار repo و workflow).");
+      }
+    } catch(err) {
+      console.error(err);
+    }
+  }
 }
 
 async function refreshCloudStatus() {
