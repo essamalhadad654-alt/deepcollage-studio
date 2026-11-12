@@ -852,44 +852,167 @@ function closeClaudeModal() {
   document.getElementById("claude-modal").classList.remove("flex");
 }
 
+
+// =========================================================================
+// CLAUDE PDF & TEXT IMPORT SYSTEM (v3.2 - Native PDF.js + Multi-Format Parser)
+// =========================================================================
+
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+async function handleClaudeFileUpload(files) {
+  if (!files || !files.length) return;
+  const file = files[0];
+  const statusEl = document.getElementById("pdf-upload-status");
+  if (statusEl) {
+    statusEl.classList.remove("hidden");
+    statusEl.className = "text-xs text-amber-400 font-bold block pt-1";
+    statusEl.textContent = `⏳ جاري قراءة وتحليل ملف ${file.name}...`;
+  }
+
+  if (file.name.toLowerCase().endsWith(".pdf")) {
+    try {
+      if (typeof pdfjsLib === 'undefined') {
+        throw new Error("جاري تحميل مكتبة PDF، يرجى المحاولة بعد 3 ثوانٍ.");
+      }
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+        fullText += pageText + "\n\n";
+      }
+      
+      const pasteArea = document.getElementById("claude-paste-area");
+      if (pasteArea) pasteArea.value = fullText;
+      
+      if (statusEl) {
+        statusEl.className = "text-xs text-emerald-400 font-bold block pt-1";
+        statusEl.textContent = `✅ تم استخراج ${pdf.numPages} صفحة من الـ PDF بنجاح! جاري التوزيع...`;
+      }
+      parseClaudeBundle();
+    } catch (err) {
+      console.error("PDF Read Error:", err);
+      if (statusEl) {
+        statusEl.className = "text-xs text-rose-400 font-bold block pt-1";
+        statusEl.textContent = `❌ تعذر استخراج النص من الـ PDF: ${err.message}. يمكنك نسخه ولصقه كنص.`;
+      }
+    }
+  } else {
+    // TXT, Markdown, JSON
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const pasteArea = document.getElementById("claude-paste-area");
+      if (pasteArea) pasteArea.value = e.target.result;
+      if (statusEl) {
+        statusEl.className = "text-xs text-emerald-400 font-bold block pt-1";
+        statusEl.textContent = `✅ تم قراءة الملف بنجاح! جاري التوزيع...`;
+      }
+      parseClaudeBundle();
+    };
+    reader.readAsText(file);
+  }
+}
+
 function parseClaudeBundle() {
-  const raw = document.getElementById("claude-paste-area").value.trim();
+  const pasteArea = document.getElementById("claude-paste-area");
+  const raw = pasteArea ? pasteArea.value.trim() : "";
   if (!raw) {
-    closeClaudeModal();
+    alert("⚠️ الرجاء اختيار ملف PDF أو لصق مخرجات كلود في المربع النصي.");
     return;
   }
-  const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+  const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const bgs = [];
   const fgs = [];
   const clips = [];
 
-  lines.forEach((line) => {
+  // Match: bg1, bg2, bg_01, #bg_01, fg1, fg1a, #cutout_01, c1, c1a, clip_01...
+  const bgRegex = /^(?:[\*\-\>\#\s]*)\b(bg_?\d+[a-z]?|background_?\d*)\b[\s\:\-\.\*]*/i;
+  const fgRegex = /^(?:[\*\-\>\#\s]*)\b(fg_?\d+[a-z]?|cutout_?\d+[a-z]?|personaje_?\d*)\b[\s\:\-\.\*]*/i;
+  const clipRegex = /^(?:[\*\-\>\#\s]*)\b(c_?\d+[a-z]?|clip_?\d+[a-z]?|chroma_?\d*)\b[\s\:\-\.\*]*/i;
+
+  let currentItem = null;
+  let currentSection = null;
+
+  lines.forEach(line => {
     const lower = line.toLowerCase();
-    if (lower.startsWith("#bg_") || lower.startsWith("bg_") || lower.startsWith("#bg")) {
-      const id = line.split(/\s+/)[0];
-      bgs.push({ id, file: `BG${bgs.length + 1}.jpg`, title: `خلفية المسرح ${id}`, prompt: line });
-    } else if (lower.startsWith("#cutout_") || lower.startsWith("cutout_") || lower.startsWith("#fg") || lower.startsWith("fg_")) {
-      const id = line.split(/\s+/)[0];
-      fgs.push({ id, file: `FG${fgs.length + 1}.jpg`, title: `قصاصة ورقية ${id}`, prompt: line });
-    } else if (lower.startsWith("#clip_") || lower.startsWith("clip_") || lower.startsWith("#c_") || lower.startsWith("c1")) {
-      const id = line.split(/\s+/)[0];
-      clips.push({ id, file: `C${clips.length + 1}.mp4`, title: `فيديو كروما ${id}`, prompt: line });
+
+    // Check for Section Titles (Caja 1, Caja 2, Caja 3, Fondos, etc.)
+    if (lower.includes("caja 1") || (lower.includes("fondos") && !lower.includes("caja"))) {
+      currentSection = "bg";
+      currentItem = null;
+      return;
+    } else if (lower.includes("caja 2") || lower.includes("figuras") || lower.includes("objetos recortados")) {
+      currentSection = "fg";
+      currentItem = null;
+      return;
+    } else if (lower.includes("caja 3") || lower.includes("clips") || lower.includes("croma")) {
+      currentSection = "clip";
+      currentItem = null;
+      return;
+    }
+
+    const mBg = line.match(bgRegex);
+    const mFg = line.match(fgRegex);
+    const mClip = line.match(clipRegex);
+
+    if (mBg) {
+      const rawId = mBg[1].toLowerCase();
+      const id = rawId.startsWith("#") ? rawId : `#${rawId}`;
+      currentItem = { id, file: `BG${bgs.length + 1}.jpg`, title: `خلفية المسرح ${id}`, prompt: line };
+      bgs.push(currentItem);
+    } else if (mFg) {
+      const rawId = mFg[1].toLowerCase();
+      const id = rawId.startsWith("#") ? rawId : `#${rawId}`;
+      currentItem = { id, file: `FG${fgs.length + 1}.jpg`, title: `قصاصة ورقية ${id}`, prompt: line };
+      fgs.push(currentItem);
+    } else if (mClip) {
+      const rawId = mClip[1].toLowerCase();
+      const id = rawId.startsWith("#") ? rawId : `#${rawId}`;
+      currentItem = { id, file: `C${clips.length + 1}.mp4`, title: `فيديو كروما ${id}`, prompt: line };
+      clips.push(currentItem);
+    } else if (currentItem && !line.startsWith("###") && !line.startsWith("|") && !line.startsWith("---")) {
+      // Continuation of multi-line prompt
+      currentItem.prompt += " " + line;
+    } else if (currentSection && (line.includes("photograph") || line.includes("isolated") || line.includes("camera") || line.includes("wide"))) {
+      if (currentSection === "bg") {
+        const id = `#bg${bgs.length + 1}`;
+        currentItem = { id, file: `BG${bgs.length + 1}.jpg`, title: `خلفية المسرح ${id}`, prompt: line };
+        bgs.push(currentItem);
+      } else if (currentSection === "fg") {
+        const id = `#fg${fgs.length + 1}`;
+        currentItem = { id, file: `FG${fgs.length + 1}.jpg`, title: `قصاصة ورقية ${id}`, prompt: line };
+        fgs.push(currentItem);
+      } else if (currentSection === "clip") {
+        const id = `#c${clips.length + 1}`;
+        currentItem = { id, file: `C${clips.length + 1}.mp4`, title: `فيديو كروما ${id}`, prompt: line };
+        clips.push(currentItem);
+      }
     }
   });
 
-  if (bgs.length) DATA.bgPrompts = bgs;
-  if (fgs.length) DATA.fgPrompts = fgs;
-  if (clips.length) DATA.clipPrompts = clips;
+  if (bgs.length > 0) DATA.bgPrompts = bgs;
+  if (fgs.length > 0) DATA.fgPrompts = fgs;
+  if (clips.length > 0) DATA.clipPrompts = clips;
 
-  // Auto-estimate duration if not set (average 4.5 seconds per prompt element)
   if (!DATA.project.durationSec || DATA.project.durationSec === 0) {
     DATA.project.durationSec = Math.max(30, (bgs.length + fgs.length) * 3.5);
   }
 
-  renderPromptBoxes();
-  renderAssetMatrix();
-  renderCloudNodes();
-  updateDynamicUIHeaders();
-  closeClaudeModal();
-  alert(`✅ تم استخراج وتوزيع ${bgs.length} خلفية، ${fgs.length} قصاصة، و ${clips.length} مقطع كروما في الصناديق الثلاثة بنجاح!`);
+  if (typeof renderPromptBoxes === 'function') renderPromptBoxes();
+  if (typeof renderAssetMatrix === 'function') renderAssetMatrix();
+  if (typeof renderCloudNodes === 'function') renderCloudNodes();
+  if (typeof updateDynamicUIHeaders === 'function') updateDynamicUIHeaders();
+  if (typeof closeClaudeModal === 'function') closeClaudeModal();
+
+  const msg = `✅ تم بنجاح استيراد وتوزيع البرومبتات في الصناديق الثلاثة:\n\n` +
+              `• ${bgs.length} خلفية مسرح مادي (bg)\n` +
+              `• ${fgs.length} قصاصة ورقية وشخصية (fg)\n` +
+              `• ${clips.length} مقطع فيديو كروما (c)`;
+  alert(msg);
 }
+

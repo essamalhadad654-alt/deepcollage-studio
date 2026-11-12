@@ -1422,7 +1422,7 @@
       </div>
 
       <!-- Drag & Drop Zone for PDF / Files -->
-      <div id="pdf-drop-zone" class="border-2 border-dashed border-amber-500/60 hover:border-amber-400 rounded-2xl p-6 text-center cursor-pointer bg-amber-500/10 hover:bg-amber-500/20 transition space-y-2 select-none" onclick="document.getElementById('claude-pdf-file-input').click()">
+      <div id="pdf-drop-zone" ondragover="event.preventDefault(); this.classList.add('border-amber-400','bg-amber-500/20')" ondragleave="this.classList.remove('border-amber-400','bg-amber-500/20')" ondrop="event.preventDefault(); this.classList.remove('border-amber-400','bg-amber-500/20'); handleClaudeFileUpload(event.dataTransfer.files)" class="border-2 border-dashed border-amber-500/60 hover:border-amber-400 rounded-2xl p-6 text-center cursor-pointer bg-amber-500/10 hover:bg-amber-500/20 transition space-y-2 select-none" onclick="document.getElementById('claude-pdf-file-input').click()">
         <div class="text-4xl">📥</div>
         <div class="text-sm font-bold text-white">اضغط هنا لاختيار ملف الـ PDF من جهازك أو اسحبه وأفلته هنا</div>
         <div class="text-xs text-amber-300 font-medium">يقبل ملفات PDF الأصلية الصادرة من Claude مباشرة + ملفات Markdown / TXT</div>
@@ -1453,9 +1453,9 @@
 
 
 
-  <script src="data.js?v=1794494085"></script>
+  <script src="data.js?v=1794494489"></script>
 
-  <script src="app.js?v=1794494085"></script>
+  <script src="app.js?v=1794494489"></script>
 
 </body>
 
