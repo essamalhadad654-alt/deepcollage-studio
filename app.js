@@ -78,6 +78,7 @@ function closeProjectsModal() {
 }
 
 function selectProjectFromGallery(key) {
+  window.assetStore = {};
   if (key === "blank") {
     resetToBlankProject();
   } else if (key === "nasiha-cairo" && window.DEFAULT_NASIHA_BACKUP) {
@@ -91,6 +92,7 @@ function selectProjectFromGallery(key) {
 }
 
 function resetToBlankProject() {
+  window.assetStore = {};
   DATA = {
     project: { name: "مشروع جديد (فارغ بالكامل)", durationSec: 0, fps: 30 },
     bgPrompts: [],
@@ -186,10 +188,15 @@ function renderPromptBoxes() {
 }
 
 // =========================================================================
-// RENDER ASSET MATRIX
+// RENDER ASSET MATRIX (WITH LIVE THUMBNAILS & DYNAMIC PREVIEWS)
 // =========================================================================
+window.assetStore = window.assetStore || {};
+let currentSlotForUpload = null;
+
 function renderAssetMatrix() {
   const grid = document.getElementById("asset-matrix-grid");
+  if (!grid) return;
+
   const bgs = DATA.bgPrompts || [];
   const fgs = DATA.fgPrompts || [];
   const clips = DATA.clipPrompts || [];
@@ -198,24 +205,104 @@ function renderAssetMatrix() {
     grid.innerHTML = `<div class="col-span-full py-8 text-center text-slate-500 text-xs font-semibold">
       لا توجد وسائط مطلوبة حالياً لأن المشروع فارغ. اسحب ملف PDF للبدء.
     </div>`;
+    const sumEl = document.getElementById("asset-count-summary");
+    if (sumEl) sumEl.textContent = "0 / 0";
     return;
   }
 
   const all = [
-    ...bgs.map(b => ({ id: b.id, label: b.file || `${b.id.toUpperCase()}.jpg`, type: "bg" })),
-    ...fgs.map(f => ({ id: f.id, label: f.file || `${f.id.toUpperCase()}.jpg`, type: "fg" })),
-    ...clips.map(c => ({ id: c.id, label: c.file || `${c.id.toUpperCase()}.mp4`, type: "clip" })),
-    { id: "voice", label: "voice.wav", type: "audio" }
+    ...bgs.map((b, idx) => ({ id: b.id, label: b.file || `BG${idx + 1}.jpg`, title: b.title || `خلفية ${b.id}`, type: "bg", index: idx + 1 })),
+    ...fgs.map((f, idx) => ({ id: f.id, label: f.file || `FG${idx + 1}.jpg`, title: f.title || `قصاصة ${f.id}`, type: "fg", index: idx + 1 })),
+    ...clips.map((c, idx) => ({ id: c.id, label: c.file || `C${idx + 1}.mp4`, title: c.title || `فيديو ${c.id}`, type: "clip", index: idx + 1 })),
+    { id: "voice", label: "voice.wav", title: "التعليق الصوتي", type: "audio", index: 1 }
   ];
 
-  grid.innerHTML = all.map(a => `
-    <div class="p-3 rounded-xl bg-[#0B0E18] border border-white/10 flex flex-col items-center justify-center gap-1 text-center">
-      <span class="text-lg">${a.type === 'bg' ? '🖼️' : a.type === 'fg' ? '✂️' : a.type === 'clip' ? '🎬' : '🎙️'}</span>
-      <span class="text-xs font-bold text-white font-mono">${a.id}</span>
-      <span class="text-[10px] text-slate-400 font-mono">${a.label}</span>
-      <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 font-bold mt-1">بانتظار الرفع</span>
-    </div>
-  `).join("");
+  let receivedCount = 0;
+
+  grid.innerHTML = all.map(a => {
+    const asset = window.assetStore[a.id];
+    if (asset) {
+      receivedCount++;
+      let mediaPreview = "";
+      if (a.type === "clip") {
+        mediaPreview = `<video src="${asset.url}" class="w-full h-full object-cover" autoplay loop muted playsinline></video>`;
+      } else if (a.type === "audio") {
+        mediaPreview = `
+          <div class="flex flex-col items-center justify-center p-2 text-center h-full">
+            <span class="text-3xl animate-bounce">🎙️</span>
+            <audio controls src="${asset.url}" class="w-full h-6 mt-1 scale-90"></audio>
+          </div>
+        `;
+      } else {
+        mediaPreview = `<img src="${asset.url}" alt="${a.id}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />`;
+      }
+
+      return `
+        <div class="p-2.5 rounded-xl bg-[#0B0E18] border border-emerald-500/40 flex flex-col items-center justify-between gap-1.5 text-center shadow-lg relative group transition hover:border-emerald-400">
+          <div class="relative w-full h-28 rounded-lg overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center">
+            ${mediaPreview}
+            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold gap-1 cursor-pointer" onclick="triggerSingleSlotUpload('${a.id}')">
+              <span>🔄</span><span>استبدال</span>
+            </div>
+          </div>
+          <div class="w-full flex items-center justify-between px-1">
+            <span class="text-xs font-mono font-bold text-white bg-white/10 px-2 py-0.5 rounded border border-white/15">${a.id}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">✅ تم الاستلام</span>
+          </div>
+          <span class="text-[10px] text-slate-300 font-mono truncate max-w-full px-1" title="${asset.name}">${asset.name}</span>
+        </div>
+      `;
+    } else {
+      const icon = a.type === 'bg' ? '🖼️' : a.type === 'fg' ? '✂️' : a.type === 'clip' ? '🎬' : '🎙️';
+      return `
+        <div onclick="triggerSingleSlotUpload('${a.id}')" class="p-2.5 rounded-xl bg-[#0B0E18] border-2 border-dashed border-white/15 hover:border-amber-500/50 flex flex-col items-center justify-between gap-1.5 text-center cursor-pointer group transition hover:bg-amber-500/5">
+          <div class="w-full h-28 rounded-lg bg-white/5 border border-white/5 flex flex-col items-center justify-center gap-1 group-hover:bg-amber-500/5 transition">
+            <span class="text-2xl opacity-60 group-hover:scale-110 transition-transform">${icon}</span>
+            <span class="text-[10px] text-slate-400 font-medium px-1 line-clamp-1">${a.title}</span>
+            <span class="text-[9px] text-amber-400 font-mono font-bold">انقر للرفع ⇡</span>
+          </div>
+          <div class="w-full flex items-center justify-between px-1">
+            <span class="text-xs font-mono font-bold text-white bg-white/10 px-2 py-0.5 rounded border border-white/15">${a.id}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 font-bold border border-amber-500/30">بانتظار الرفع</span>
+          </div>
+          <span class="text-[10px] text-slate-500 font-mono truncate max-w-full px-1">${a.label}</span>
+        </div>
+      `;
+    }
+  }).join("");
+
+  const sumEl = document.getElementById("asset-count-summary");
+  if (sumEl) {
+    sumEl.textContent = `${receivedCount} / ${all.length}`;
+    if (receivedCount === all.length && all.length > 0) {
+      sumEl.className = "text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono font-bold";
+    } else {
+      sumEl.className = "text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono font-bold";
+    }
+  }
+}
+
+function triggerSingleSlotUpload(slotId) {
+  currentSlotForUpload = slotId;
+  const input = document.getElementById("single-slot-input");
+  if (input) {
+    input.value = "";
+    input.click();
+  }
+}
+
+function handleSingleSlotFile(files) {
+  if (!files || !files.length || !currentSlotForUpload) return;
+  const file = files[0];
+  window.assetStore = window.assetStore || {};
+  window.assetStore[currentSlotForUpload] = {
+    file: file,
+    url: URL.createObjectURL(file),
+    name: file.name,
+    size: file.size,
+    type: file.type
+  };
+  renderAssetMatrix();
 }
 
 // =========================================================================
@@ -413,6 +500,7 @@ function parsePromptsFromExtractedText(fullText, fileName) {
     durationSec: bgs.length * 3.6,
     fps: 30
   };
+  window.assetStore = {};
   DATA.bgPrompts = bgs;
   DATA.fgPrompts = fgs;
   DATA.clipPrompts = clips;
@@ -429,25 +517,135 @@ function parsePromptsFromExtractedText(fullText, fileName) {
 }
 
 // =========================================================================
-// BATCH ASSETS HANDLER
+// SMART BATCH ASSETS MATCHER & PREVIEW ENGINE
 // =========================================================================
 function handleBatchFiles(files) {
   if (!files || !files.length) return;
-  alert(`📦 تم استلام ${files.length} ملف! جاري مطابقة الملفات مع المشاهد...`);
-  const grid = document.getElementById("asset-matrix-grid");
-  Array.from(files).forEach(file => {
-    const fname = file.name.toLowerCase();
-    for (const child of grid.children) {
-      const label = child.querySelector(".text-\\[10px\\]")?.textContent.toLowerCase();
-      if (label && fname.includes(label.replace(/\..*/, ""))) {
-        const badge = child.querySelector(".mt-1");
-        if (badge) {
-          badge.className = "text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold mt-1";
-          badge.textContent = "✅ تم الاستلام";
-        }
-      }
+  window.assetStore = window.assetStore || {};
+
+  const bgs = DATA.bgPrompts || [];
+  const fgs = DATA.fgPrompts || [];
+  const clips = DATA.clipPrompts || [];
+
+  const slots = [
+    ...bgs.map((b, idx) => ({ id: b.id, label: b.file || `BG${idx + 1}.jpg`, type: "bg", index: idx + 1 })),
+    ...fgs.map((f, idx) => ({ id: f.id, label: f.file || `FG${idx + 1}.jpg`, type: "fg", index: idx + 1 })),
+    ...clips.map((c, idx) => ({ id: c.id, label: c.file || `C${idx + 1}.mp4`, type: "clip", index: idx + 1 })),
+    { id: "voice", label: "voice.wav", type: "audio", index: 1 }
+  ];
+
+  if (slots.length === 1 && slots[0].id === "voice") {
+    alert("⚠️ يرجى استيراد ملف الـ PDF أولاً ليتعرف التطبيق على الوسائط المطلوبة للمشروع.");
+    return;
+  }
+
+  const fileItems = Array.from(files).map(file => {
+    const raw = file.name.trim();
+    const lastDot = raw.lastIndexOf('.');
+    const ext = lastDot !== -1 ? raw.substring(lastDot).toLowerCase() : "";
+    const stem = (lastDot !== -1 ? raw.substring(0, lastDot) : raw).toLowerCase();
+    const clean = stem.replace(/[^a-z0-9]/g, '');
+    const isImage = /\.(png|jpe?g|webp|gif|bmp|tiff)$/i.test(raw);
+    const isVideo = /\.(mp4|webm|mov|mkv)$/i.test(raw);
+    const isAudio = /\.(wav|mp3|m4a|aac|ogg|flac)$/i.test(raw);
+    return { file, raw, stem, clean, ext, isImage, isVideo, isAudio, matched: false };
+  });
+
+  function assign(slotId, item) {
+    if (item.matched) return false;
+    window.assetStore[slotId] = {
+      file: item.file,
+      url: URL.createObjectURL(item.file),
+      name: item.raw,
+      size: item.file.size,
+      type: item.file.type
+    };
+    item.matched = true;
+    return true;
+  }
+
+  // 1. Audio Match (voice.wav)
+  const voiceSlot = slots.find(s => s.id === "voice");
+  if (voiceSlot && !window.assetStore["voice"]) {
+    const audioItem = fileItems.find(f => !f.matched && (f.isAudio || f.clean.includes("voice") || f.clean.includes("audio") || f.clean.includes("sound") || f.clean.includes("speech") || f.clean.includes("صوت")));
+    if (audioItem) assign("voice", audioItem);
+  }
+
+  // 2. Video Clips Match (c1, c2, clip1, clip2)
+  const clipSlots = slots.filter(s => s.type === "clip");
+  clipSlots.forEach(cs => {
+    if (window.assetStore[cs.id]) return;
+    const num = cs.index;
+    const item = fileItems.find(f => !f.matched && (f.isVideo || f.clean.startsWith("c") || f.clean.includes("clip")) &&
+      (f.clean === `c${num}` || f.clean === `clip${num}` || f.clean === `c0${num}` || f.clean === `clip0${num}` || f.stem.includes(`c${num}`) || f.stem.includes(`clip${num}`)));
+    if (item) assign(cs.id, item);
+  });
+  // Fallback for remaining video clips
+  clipSlots.forEach(cs => {
+    if (!window.assetStore[cs.id]) {
+      const anyVideo = fileItems.find(f => !f.matched && (f.isVideo || f.clean.startsWith("c")));
+      if (anyVideo) assign(cs.id, anyVideo);
     }
   });
+
+  // 3. Exact ID & Suffix Matching (fg1, fg1a, fg2, fg2a, fg3, fg3a, fg4, fg4a, fg5, fg5a, fg6, fg6a, fg7, bg1..bg7)
+  slots.forEach(slot => {
+    if (slot.type === "audio" || slot.type === "clip" || window.assetStore[slot.id]) return;
+    const idClean = slot.id.toLowerCase().replace(/[^a-z0-9]/g, ""); // e.g. "fg4a"
+    const match = fileItems.find(f => !f.matched && f.isImage && 
+      (f.clean === idClean || f.stem === slot.id.toLowerCase() || f.clean.startsWith(idClean + "_") || f.clean.includes(idClean)));
+    if (match) assign(slot.id, match);
+  });
+
+  // 4. Sequential Index Matching (B01..B07, FG1..FG13, F01..F13)
+  // Backgrounds:
+  slots.filter(s => s.type === "bg").forEach(bs => {
+    if (window.assetStore[bs.id]) return;
+    const idx = bs.index;
+    const match = fileItems.find(f => !f.matched && f.isImage &&
+      (f.clean === `bg${idx}` || f.clean === `bg0${idx}` || f.clean === `b${idx}` || f.clean === `b0${idx}` || f.stem.includes(`bg${idx}`) || f.stem.includes(`b0${idx}`) || f.clean.includes(`background${idx}`)));
+    if (match) assign(bs.id, match);
+  });
+
+  // Cutouts (Ordinal index 1 to 13):
+  slots.filter(s => s.type === "fg").forEach(fs => {
+    if (window.assetStore[fs.id]) return;
+    const idx = fs.index;
+    const match = fileItems.find(f => !f.matched && f.isImage &&
+      (f.clean === `fg${idx}` || f.clean === `fg0${idx}` || f.clean === `f${idx}` || f.clean === `f0${idx}` || f.stem.includes(`fg${idx}`) || f.stem.includes(`f0${idx}`) || f.clean === `cutout${idx}` || f.clean === `cutout0${idx}`));
+    if (match) assign(fs.id, match);
+  });
+
+  // 5. Intelligent Fallback (Assign leftover images to leftover slots in natural sort order)
+  const emptyFgSlots = slots.filter(s => s.type === "fg" && !window.assetStore[s.id]);
+  const unassignedImages = fileItems.filter(f => !f.matched && f.isImage);
+  unassignedImages.sort((a, b) => a.raw.localeCompare(b.raw, undefined, { numeric: true, sensitivity: 'base' }));
+
+  emptyFgSlots.forEach((slot, i) => {
+    if (unassignedImages[i]) {
+      assign(slot.id, unassignedImages[i]);
+    }
+  });
+
+  const emptyBgSlots = slots.filter(s => s.type === "bg" && !window.assetStore[s.id]);
+  const leftoverImages = fileItems.filter(f => !f.matched && f.isImage);
+  emptyBgSlots.forEach((slot, i) => {
+    if (leftoverImages[i]) {
+      assign(slot.id, leftoverImages[i]);
+    }
+  });
+
+  // Re-render asset matrix with real thumbnails
+  renderAssetMatrix();
+
+  const totalAssigned = Object.keys(window.assetStore).length;
+  const totalRequired = slots.length;
+
+  if (totalAssigned >= totalRequired) {
+    alert(`🎉 ممتاز جداً! تم استلام جميع وسائط المشروع (${totalAssigned}/${totalRequired}) وعرض معايناتها الحية بنجاح!`);
+  } else {
+    alert(`📦 تم مطابقة ${totalAssigned} من أصل ${totalRequired} وسائط بنجاح وعرض صورها الحية!\n\nيمكنك النقر مباشرة على أي بطاقة متبقية لاختيار صورتها يدوياً.`);
+  }
 }
 
 // =========================================================================

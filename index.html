@@ -291,12 +291,19 @@
             <span>اختر الملفات من جهازك دفعة واحدة</span>
           </button>
           <input type="file" id="batch-file-input" multiple class="hidden" onchange="handleBatchFiles(this.files)" />
+          <input type="file" id="single-slot-input" class="hidden" onchange="handleSingleSlotFile(this.files)" />
         </div>
       </div>
 
       <!-- Asset Status Grid -->
       <div class="glass-card rounded-2xl p-6 space-y-4">
-        <h4 class="text-sm font-extrabold text-white">حالة جاهزية الوسائط للمشروع:</h4>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h4 class="text-sm font-extrabold text-white flex items-center gap-2">
+            <span>حالة جاهزية الوسائط للمشروع:</span>
+            <span id="asset-count-summary" class="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 font-mono font-bold">0 / 0</span>
+          </h4>
+          <span class="text-xs text-slate-400 font-medium">💡 يمكنك النقر على أي بطاقة لاستبدال صورتها أو رفعها بشكل منفصل.</span>
+        </div>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3" id="asset-matrix-grid"></div>
       </div>
 
@@ -469,7 +476,7 @@
   </div>
 
   <!-- SCRIPTS -->
-  <script src="data.js?v=1794498922"></script>
-  <script src="app.js?v=1794498922"></script>
+  <script src="data.js?v=1794501901"></script>
+  <script src="app.js?v=1794501901"></script>
 </body>
 </html>
