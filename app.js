@@ -743,8 +743,20 @@ async function startRealCloudRender() {
   desc.textContent = "جاري الاتصال بمستودع collage-cloud-studio عبر GitHub API...";
   bar.style.width = "20%";
 
+  let latestRunIdBefore = null;
+  const dispatchStartTime = Date.now();
+
   try {
-    // Real dispatch call to GitHub Actions
+    // 1. Get the latest run before dispatch so we NEVER poll an old run
+    const preCheck = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/runs?per_page=1`, {
+      headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Accept": "application/vnd.github.v3+json" }
+    });
+    if (preCheck.ok) {
+      const preData = await preCheck.json();
+      latestRunIdBefore = preData.workflow_runs?.[0]?.id;
+    }
+
+    // 2. Real dispatch call to GitHub Actions
     const dispatchRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/render.yml/dispatches`, {
       method: "POST",
       headers: {
@@ -760,21 +772,21 @@ async function startRealCloudRender() {
       console.warn("Dispatch status:", dispatchRes.status, errTxt);
     }
 
-    title.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span><span>تم تشغيل السيرفر السحابي بنجاح!</span>`;
-    desc.textContent = "سيرفر Ubuntu 22.04 يقوم الآن بتركيب المشاهد والرندرة السحابية (Remotion)...";
-    bar.style.width = "45%";
+    title.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span><span>تم إرسال أمر التشغيل! جاري بدء مهمة جديدة...</span>`;
+    desc.textContent = "سيرفر GitHub Actions يستلم أمر التشغيل ويجهز حاوية Ubuntu (تستغرق ثوانٍ معدودة)...";
+    bar.style.width = "30%";
 
-    // Poll actual run status from GitHub
-    pollRealGitHubRun();
+    // 3. Poll ONLY the new run from GitHub
+    pollRealGitHubRun(latestRunIdBefore, dispatchStartTime);
 
   } catch (err) {
     console.error("Render trigger error:", err);
-    desc.textContent = `ملاحظة: السيرفر السحابي يعمل. يمكنك مراقبة الحالة مباشرة عبر رابط السجل.`;
-    bar.style.width = "60%";
+    desc.textContent = `ملاحظة: حدث خطأ في الاتصال بالسيرفر: ${err.message}`;
+    bar.style.width = "50%";
   }
 }
 
-async function pollRealGitHubRun() {
+async function pollRealGitHubRun(latestRunIdBefore, dispatchStartTime) {
   const bar = document.getElementById("render-progress-bar");
   const title = document.getElementById("render-status-title");
   const desc = document.getElementById("render-status-desc");
@@ -783,40 +795,65 @@ async function pollRealGitHubRun() {
   const pollTimer = setInterval(async () => {
     checkCount += 1;
     try {
-      const runsRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/runs?per_page=1`, {
+      const runsRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/runs?per_page=5`, {
         headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Accept": "application/vnd.github.v3+json" }
       });
       if (runsRes.ok) {
         const runsData = await runsRes.json();
-        const run = runsData.workflow_runs?.[0];
-        if (run) {
-          document.getElementById("render-live-logs-link").href = run.html_url;
-          if (run.status === "in_progress") {
-            bar.style.width = "75%";
-            title.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span><span>السيرفر يعمل الآن على GitHub (Run #${run.run_number})</span>`;
-            desc.textContent = `حالة التشغيل: in_progress • جاري تصدير الإطارات بدقة عالية 60 FPS...`;
-          } else if (run.status === "completed") {
-            clearInterval(pollTimer);
-            clearInterval(renderPollingInterval);
-            bar.style.width = "100%";
+        // Strict filter: must be a different run ID, created around or after our dispatch
+        const run = (runsData.workflow_runs || []).find(r => 
+          r.id !== latestRunIdBefore && (new Date(r.created_at).getTime() >= dispatchStartTime - 20000)
+        );
+
+        if (!run) {
+          // Still waiting for GitHub to spawn the run object
+          title.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span><span>جاري إرسال إشارة التشغيل وتجهيز بيئة العمل السحابية...</span>`;
+          desc.textContent = `سيرفر GitHub Actions يجهز حاوية Ubuntu للتشغيل (${checkCount * 4} ثوانٍ)...`;
+          bar.style.width = `${Math.min(35, 20 + checkCount * 2)}%`;
+          return;
+        }
+
+        // We have the REAL new run!
+        document.getElementById("render-live-logs-link").href = run.html_url;
+
+        if (run.status === "queued") {
+          bar.style.width = "40%";
+          title.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span><span>السيرفر السحابي في قائمة الانتظار (Run #${run.run_number})</span>`;
+          desc.textContent = "جاري تهيئة بيئة Remotion وتثبيت الحزم على سيرفر Ubuntu...";
+        } else if (run.status === "in_progress") {
+          bar.style.width = `${Math.min(90, 45 + checkCount * 1.5)}%`;
+          title.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span><span>السيرفر يعمل الآن على GitHub (Run #${run.run_number})</span>`;
+          desc.textContent = `حالة التشغيل: قيد التنفيذ • جاري رندرة الإطارات بدقة عالية 60 FPS...`;
+        } else if (run.status === "completed") {
+          clearInterval(pollTimer);
+          clearInterval(renderPollingInterval);
+          bar.style.width = "100%";
+          document.getElementById("download-container").classList.remove("hidden");
+
+          if (run.conclusion === "success") {
             title.innerHTML = `<span>🎉</span><span>اكتملت الرندرة السحابية بنجاح!</span>`;
-            desc.textContent = `انتهت معالجة الفيديو بالكامل بنجاح على سيرفر GitHub السحابي.`;
-            document.getElementById("download-container").classList.remove("hidden");
+            desc.textContent = `انتهت معالجة الفيديو بالكامل بنجاح على سيرفر GitHub السحابي (Run #${run.run_number}).`;
             document.getElementById("download-final-video-btn").href = run.html_url;
-            return;
+            document.getElementById("download-final-video-btn").textContent = "تحميل الفيديو النهائي (MP4 بجودة عالية) 📥";
+          } else {
+            title.innerHTML = `<span>⚠️</span><span>انتهت المهمة على السيرفر (الحالة: ${run.conclusion})</span>`;
+            desc.textContent = `يمكنك فتح سجلات السيرفر السحابي مباشرة لمعاينة تفاصيل المهمة والنتائج.`;
+            document.getElementById("download-final-video-btn").href = run.html_url;
+            document.getElementById("download-final-video-btn").textContent = "فتح تفاصيل وسجلات الرندرة على GitHub ↗";
           }
+          return;
         }
       }
     } catch (e) {
       console.warn("Polling error:", e);
     }
 
-    if (checkCount > 24) { // 2 minutes timeout
+    if (checkCount > 90) { // 6 minutes timeout
       clearInterval(pollTimer);
       clearInterval(renderPollingInterval);
       bar.style.width = "100%";
       title.innerHTML = `<span>⏳</span><span>السيرفر ما زال يعالج الفيديو...</span>`;
       desc.textContent = "يمكنك متابعة تقدم الرندرة أو تحميل الفيديو عند انتهائه عبر رابط سجل التشغيل.";
     }
-  }, 5000);
+  }, 4000);
 }
