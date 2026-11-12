@@ -5,15 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeepCollage Studio — استوديو الكولاج الوثائقي ثلاثي الأبعاد</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Google Fonts: Cairo & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   
-  <!-- LOCAL PDF.js (Same Origin - ZERO CORS / ZERO WORKER ERRORS) -->
+  <!-- LOCAL OFFLINE PDF.JS (SAME ORIGIN - ZERO WORKER / ZERO CORS ISSUES) -->
   <script src="pdf.min.js"></script>
   <script>
     if (typeof pdfjsLib !== 'undefined') {
@@ -31,8 +29,7 @@
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            brand: {
-              50: '#FFFBEB',
+            gold: {
               400: '#FBBF24',
               500: '#F59E0B',
               600: '#D97706',
@@ -45,30 +42,27 @@
 
   <style>
     body {
-      background-color: #080A10;
+      background-color: #07090E;
       color: #F3F4F6;
       font-family: 'Cairo', sans-serif;
     }
-    .glass-panel {
-      background: rgba(15, 18, 28, 0.85);
-      backdrop-filter: blur(16px);
+    .glass-card {
+      background: rgba(13, 16, 26, 0.88);
+      backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .glass-panel:hover {
-      border-color: rgba(245, 158, 11, 0.25);
-    }
-    .gold-border {
-      border-color: rgba(245, 158, 11, 0.4);
+    .glass-card:hover {
+      border-color: rgba(245, 158, 11, 0.3);
     }
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #080A10;
+      background: #07090E;
     }
     ::-webkit-scrollbar-thumb {
-      background: #23283A;
+      background: #202538;
       border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
@@ -79,99 +73,103 @@
 
 <body class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
 
-  <!-- ========================================== -->
-  <!-- TOP HEADER NAVBAR                          -->
-  <!-- ========================================== -->
-  <header class="sticky top-0 z-40 border-b border-white/10 bg-[#080A10]/95 backdrop-blur-md">
+  <!-- ============================================================== -->
+  <!-- TOP HEADER NAVBAR                                              -->
+  <!-- ============================================================== -->
+  <header class="sticky top-0 z-40 border-b border-white/10 bg-[#07090E]/95 backdrop-blur-md">
     <div class="max-w-[1550px] mx-auto px-6 h-16 flex items-center justify-between gap-4">
       
-      <!-- Brand & Title -->
+      <!-- Brand & Active Project Title -->
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 text-black font-black text-xl">
           DC
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-extrabold text-base tracking-tight text-white">DeepCollage Studio</span>
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold">PRO V3</span>
+            <span class="font-extrabold text-base tracking-tight text-white" id="header-project-name">مشروع جديد (فارغ بالكامل)</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold" id="header-status-badge">جلسة فارغة جاهزة</span>
           </div>
-          <p class="text-[11px] text-slate-400">استوديو إنتاج الكولاج الوثائقي ثلاثي الأبعاد • معالجة سحابية فائقة</p>
+          <p class="text-[11px] text-slate-400">استوديو إنتاج الكولاج الوثائقي ثلاثي الأبعاد • معالجة سحابية مستقلة</p>
         </div>
       </div>
 
-      <!-- Center: Project Switcher -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-slate-400 font-bold">المشروع:</span>
-        <select id="project-selector" onchange="switchProject(this.value)" class="px-3.5 py-1.5 rounded-xl bg-[#121624] border border-amber-500/40 text-xs font-bold text-white focus:outline-none focus:border-amber-400 transition">
-          <option value="nasiha-cairo" selected>📁 نصيحة لك في هذه الدنيا (7 مشاهد · القاهرة الثلاثينيات)</option>
-          <option value="alkitman-58">📁 الكتمان — قصة يوسف ويعقوب (58 مشهداً)</option>
-        </select>
-      </div>
-
-      <!-- Quick Action: Import PDF Button -->
+      <!-- Action Buttons in Header -->
       <div class="flex items-center gap-3">
-        <button onclick="document.getElementById('top-pdf-input').click()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-black flex items-center gap-2 shadow-lg shadow-amber-500/25 transition">
-          <span class="text-base">📄</span>
-          <span>استيراد ملف PDF من Claude</span>
+        <!-- Projects Gallery Button (Google Flow Style) -->
+        <button onclick="openProjectsModal()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 text-xs font-bold transition flex items-center gap-2">
+          <span class="text-base">🗂️</span>
+          <span>مشاريعي المحفوظة</span>
         </button>
-        <input type="file" id="top-pdf-input" accept=".pdf,.txt,.md" class="hidden" onchange="handleDirectPDFUpload(this.files)" />
+
+        <!-- Reset / New Blank Project Button -->
+        <button onclick="resetToBlankProject()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold transition flex items-center gap-1.5" title="بدء مشروع جديد فارغ">
+          <span>✨</span>
+          <span>مشروع فارغ</span>
+        </button>
+
+        <!-- Direct PDF Import Button -->
+        <button onclick="document.getElementById('top-pdf-file-input').click()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-black flex items-center gap-2 shadow-lg shadow-amber-500/25 transition">
+          <span class="text-base">📄</span>
+          <span>استيراد PDF من Claude</span>
+        </button>
+        <input type="file" id="top-pdf-file-input" accept=".pdf,.txt,.md" class="hidden" onchange="handlePDFUpload(this.files)" />
       </div>
 
     </div>
   </header>
 
-  <!-- ========================================== -->
-  <!-- MAIN WORKSPACE                             -->
-  <!-- ========================================== -->
+  <!-- ============================================================== -->
+  <!-- MAIN WORKSPACE                                                 -->
+  <!-- ============================================================== -->
   <main class="flex-1 max-w-[1550px] w-full mx-auto px-6 py-6 space-y-6">
 
-    <!-- HERO / PDF DROPZONE CARD -->
-    <div id="main-dropzone" 
-         ondragover="event.preventDefault(); this.classList.add('border-amber-400', 'bg-amber-500/10')" 
-         ondragleave="this.classList.remove('border-amber-400', 'bg-amber-500/10')" 
-         ondrop="event.preventDefault(); this.classList.remove('border-amber-400', 'bg-amber-500/10'); handleDirectPDFUpload(event.dataTransfer.files)"
-         class="glass-panel rounded-2xl p-6 border-2 border-dashed border-amber-500/40 transition flex flex-col md:flex-row items-center justify-between gap-6">
+    <!-- HERO: TOP PDF DROPZONE -->
+    <div id="pdf-hero-dropzone"
+         ondragover="event.preventDefault(); this.classList.add('border-amber-400', 'bg-amber-500/10')"
+         ondragleave="this.classList.remove('border-amber-400', 'bg-amber-500/10')"
+         ondrop="event.preventDefault(); this.classList.remove('border-amber-400', 'bg-amber-500/10'); handlePDFUpload(event.dataTransfer.files)"
+         class="glass-card rounded-2xl p-6 border-2 border-dashed border-amber-500/40 transition flex flex-col md:flex-row items-center justify-between gap-6">
       
       <div class="flex items-center gap-4">
-        <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl">
+        <div class="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-3xl">
           📥
         </div>
         <div class="space-y-1">
           <h2 class="text-base font-extrabold text-white flex items-center gap-2">
             <span>اسحب وأفلت ملف الـ PDF هنا من Claude</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-mono font-bold">تلقائي فوري</span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold">استخراج تلقائي فوري</span>
           </h2>
           <p class="text-xs text-slate-400">
-            يقوم النظام بقراءة ملف الـ PDF في ثانية واحدة واستخراج الخلفيات (<code class="text-amber-300">bg</code>)، والقصاصات (<code class="text-sky-300">fg</code>)، والفيديوهات (<code class="text-emerald-300">c</code>)، ومصفوفة المشاهد تلقائياً.
+            يقوم التطبيق بقراءة ملف الـ PDF بلمح البصر، واستخراج كل الخلفيات (<code class="text-amber-300 font-mono">bg</code>)، والقصاصات (<code class="text-sky-300 font-mono">fg</code>)، والفيديوهات (<code class="text-emerald-300 font-mono">c</code>)، وجدول المشاهد فوراً.
           </p>
-          <div id="upload-status-badge" class="text-xs font-bold pt-1 hidden"></div>
+          <div id="pdf-status-badge" class="text-xs font-bold pt-1 hidden"></div>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
-        <button onclick="document.getElementById('top-pdf-input').click()" class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 text-xs font-bold transition flex items-center gap-2">
+        <button onclick="document.getElementById('top-pdf-file-input').click()" class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 text-xs font-bold transition flex items-center gap-2 shadow-md">
           <span>📁</span>
-          <span>اختر ملف PDF من جهازك</span>
+          <span>اختر ملف الـ PDF من جهازك</span>
         </button>
-        <button onclick="openManualPasteModal()" class="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold transition" title="لصق نص يدوي">
+        <button onclick="openPasteModal()" class="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold transition">
           <span>📋 لصق يدوي</span>
         </button>
       </div>
 
     </div>
 
-    <!-- WORKFLOW NAVIGATION TABS -->
+    <!-- 4 WORKFLOW STEPPER TABS -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-      <button onclick="switchTab('prompts')" id="tab-btn-prompts" class="glass-panel p-4 rounded-xl text-right transition border-amber-500 bg-amber-500/15 text-white">
+      <button onclick="switchTab('prompts')" id="tab-btn-prompts" class="glass-card p-4 rounded-xl text-right transition border-amber-500 bg-amber-500/15 text-white shadow-md">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono text-amber-400 font-bold">الخطوة 1</span>
           <span class="text-lg">📋</span>
         </div>
         <div class="text-sm font-extrabold mt-1">صناديق البرومبتات الثلاثة</div>
-        <div class="text-[11px] text-slate-400 mt-0.5" id="stats-prompts">7 خلفيات • 13 قصاصة • 2 فيديو</div>
+        <div class="text-[11px] text-slate-400 mt-0.5" id="stats-prompts">0 خلفية • 0 قصاصة • 0 فيديو</div>
       </button>
 
-      <button onclick="switchTab('assets')" id="tab-btn-assets" class="glass-panel p-4 rounded-xl text-right transition border-white/10 text-slate-300 hover:border-white/20">
+      <button onclick="switchTab('assets')" id="tab-btn-assets" class="glass-card p-4 rounded-xl text-right transition border-white/10 text-slate-300 hover:border-white/20">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono text-sky-400 font-bold">الخطوة 2</span>
           <span class="text-lg">📦</span>
@@ -180,40 +178,40 @@
         <div class="text-[11px] text-slate-400 mt-0.5">اسحب كل الصور والفيديوهات هنا</div>
       </button>
 
-      <button onclick="switchTab('scenes')" id="tab-btn-scenes" class="glass-panel p-4 rounded-xl text-right transition border-white/10 text-slate-300 hover:border-white/20">
+      <button onclick="switchTab('scenes')" id="tab-btn-scenes" class="glass-card p-4 rounded-xl text-right transition border-white/10 text-slate-300 hover:border-white/20">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono text-purple-400 font-bold">الخطوة 3</span>
           <span class="text-lg">🎬</span>
         </div>
         <div class="text-sm font-extrabold mt-1">مصفوفة الإخراج والمونتاج</div>
-        <div class="text-[11px] text-slate-400 mt-0.5" id="stats-scenes">7 مشاهد • 25.5 ثانية</div>
+        <div class="text-[11px] text-slate-400 mt-0.5" id="stats-scenes">0 مشاهد • 0 ثانية</div>
       </button>
 
-      <button onclick="switchTab('render')" id="tab-btn-render" class="glass-panel p-4 rounded-xl text-right transition border-white/10 text-slate-300 hover:border-white/20">
+      <button onclick="switchTab('render')" id="tab-btn-render" class="glass-card p-4 rounded-xl text-right transition border-white/10 text-slate-300 hover:border-white/20">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono text-emerald-400 font-bold">الخطوة 4</span>
           <span class="text-lg">🚀</span>
         </div>
-        <div class="text-sm font-extrabold mt-1">الرندرة السحابية الفائقة</div>
-        <div class="text-[11px] text-slate-400 mt-0.5">GitHub Actions • فيديو MP4 جاهز</div>
+        <div class="text-sm font-extrabold mt-1">الرندرة السحابية الحقيقية</div>
+        <div class="text-[11px] text-slate-400 mt-0.5">GitHub Actions • معالجة فعلية</div>
       </button>
     </div>
 
-    <!-- ==================================================== -->
-    <!-- SECTION 1: THE THREE PROMPT BOXES                    -->
-    <!-- ==================================================== -->
+    <!-- ============================================================== -->
+    <!-- SECTION 1: THE THREE PROMPT BOXES                              -->
+    <!-- ============================================================== -->
     <section id="sec-prompts" class="space-y-6">
       
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <!-- BOX 1: BACKGROUNDS (bg) -->
-        <div class="glass-panel rounded-2xl p-5 flex flex-col h-[650px]">
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-[650px]">
           <div class="flex items-center justify-between pb-3 border-b border-white/10">
             <div>
               <span class="text-[10px] font-mono text-amber-400 uppercase font-bold">الصندوق 1 • الخلفيات</span>
               <h3 class="text-base font-extrabold text-white flex items-center gap-1.5">
                 <span>مسارح الأرضية الثابتة</span>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono" id="badge-bg-count">7</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold" id="badge-bg-count">0</span>
               </h3>
             </div>
             <button onclick="copyFullBox('bg')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition flex items-center gap-1 shadow-md">
@@ -226,13 +224,13 @@
         </div>
 
         <!-- BOX 2: CUTOUTS & CHARACTERS (fg) -->
-        <div class="glass-panel rounded-2xl p-5 flex flex-col h-[650px]">
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-[650px]">
           <div class="flex items-center justify-between pb-3 border-b border-white/10">
             <div>
               <span class="text-[10px] font-mono text-sky-400 uppercase font-bold">الصندوق 2 • القصاصات</span>
               <h3 class="text-base font-extrabold text-white flex items-center gap-1.5">
                 <span>الشخصيات والأغراض المقصوصة</span>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono" id="badge-fg-count">13</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono font-bold" id="badge-fg-count">0</span>
               </h3>
             </div>
             <button onclick="copyFullBox('fg')" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-black text-xs font-bold transition flex items-center gap-1 shadow-md">
@@ -240,18 +238,18 @@
               <span id="btn-copy-fg">نسخ كل الصندوق</span>
             </button>
           </div>
-          <p class="text-[11px] text-slate-400 py-2">قصاصات الأشخاص والأدوات على خلفية بيضاء نقية <code class="text-sky-300">#FFFFFF</code> للتفريغ السهل.</p>
+          <p class="text-[11px] text-slate-400 py-2">قصاصات الأشخاص والأدوات على خلفية بيضاء نقية <code class="text-sky-300 font-mono">#FFFFFF</code> للتفريغ السهل.</p>
           <div class="flex-1 overflow-y-auto space-y-3 pr-1" id="list-fg-prompts"></div>
         </div>
 
         <!-- BOX 3: LIVE CHROMA VIDEOS (c) -->
-        <div class="glass-panel rounded-2xl p-5 flex flex-col h-[650px]">
+        <div class="glass-card rounded-2xl p-5 flex flex-col h-[650px]">
           <div class="flex items-center justify-between pb-3 border-b border-white/10">
             <div>
               <span class="text-[10px] font-mono text-emerald-400 uppercase font-bold">الصندوق 3 • الكروما الحية</span>
               <h3 class="text-base font-extrabold text-white flex items-center gap-1.5">
                 <span>مقاطع الحركة الحية</span>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono" id="badge-clip-count">2</span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold" id="badge-clip-count">0</span>
               </h3>
             </div>
             <button onclick="copyFullBox('clip')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition flex items-center gap-1 shadow-md">
@@ -259,7 +257,7 @@
               <span id="btn-copy-clip">نسخ كل الصندوق</span>
             </button>
           </div>
-          <p class="text-[11px] text-slate-400 py-2">مقاطع كروما خضراء <code class="text-emerald-300">#00FF00</code> لكاميرا ثابتة (بخار، دخان، وتفاصيل حية).</p>
+          <p class="text-[11px] text-slate-400 py-2">مقاطع كروما خضراء <code class="text-emerald-300 font-mono">#00FF00</code> لكاميرا ثابتة (بخار، دخان، وتفاصيل حية).</p>
           <div class="flex-1 overflow-y-auto space-y-3 pr-1" id="list-clip-prompts"></div>
         </div>
 
@@ -267,15 +265,15 @@
 
     </section>
 
-    <!-- ==================================================== -->
-    <!-- SECTION 2: BATCH MEDIA ASSET DROPZONE                -->
-    <!-- ==================================================== -->
+    <!-- ============================================================== -->
+    <!-- SECTION 2: BATCH MEDIA ASSET DROPZONE                          -->
+    <!-- ============================================================== -->
     <section id="sec-assets" class="hidden space-y-6">
       
-      <div class="glass-panel rounded-2xl p-8 border-2 border-dashed border-sky-500/40 text-center space-y-4"
+      <div class="glass-card rounded-2xl p-8 border-2 border-dashed border-sky-500/40 text-center space-y-4"
            ondragover="event.preventDefault(); this.classList.add('border-sky-400', 'bg-sky-500/10')"
            ondragleave="this.classList.remove('border-sky-400', 'bg-sky-500/10')"
-           ondrop="event.preventDefault(); this.classList.remove('border-sky-400', 'bg-sky-500/10'); handleBatchAssetFiles(event.dataTransfer.files)">
+           ondrop="event.preventDefault(); this.classList.remove('border-sky-400', 'bg-sky-500/10'); handleBatchFiles(event.dataTransfer.files)">
         
         <div class="w-16 h-16 rounded-2xl bg-sky-500/15 border border-sky-500/30 mx-auto flex items-center justify-center text-3xl">
           📦
@@ -284,7 +282,7 @@
           <h3 class="text-lg font-black text-white">اسحب جميع ملفات الصور والفيديوهات والصوت دفعة واحدة هنا</h3>
           <p class="text-xs text-slate-400 mt-1">
             يقوم التطبيق بالتعرف التلقائي على أسماء الملفات وتوزيعها على المشاهد:
-            <code class="text-amber-300">BG1.jpg</code>، <code class="text-sky-300">FG1.jpg</code>، <code class="text-emerald-300">C1.mp4</code>، وملف الصوت <code class="text-purple-300">voice.wav</code>.
+            <code class="text-amber-300 font-mono">BG1.jpg</code>، <code class="text-sky-300 font-mono">FG1.jpg</code>، <code class="text-emerald-300 font-mono">C1.mp4</code>، وملف الصوت <code class="text-purple-300 font-mono">voice.wav</code>.
           </p>
         </div>
         <div class="flex justify-center gap-3">
@@ -292,24 +290,24 @@
             <span>📂</span>
             <span>اختر الملفات من جهازك دفعة واحدة</span>
           </button>
-          <input type="file" id="batch-file-input" multiple class="hidden" onchange="handleBatchAssetFiles(this.files)" />
+          <input type="file" id="batch-file-input" multiple class="hidden" onchange="handleBatchFiles(this.files)" />
         </div>
       </div>
 
       <!-- Asset Status Grid -->
-      <div class="glass-panel rounded-2xl p-6 space-y-4">
+      <div class="glass-card rounded-2xl p-6 space-y-4">
         <h4 class="text-sm font-extrabold text-white">حالة جاهزية الوسائط للمشروع:</h4>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3" id="asset-matrix-grid"></div>
       </div>
 
     </section>
 
-    <!-- ==================================================== -->
-    <!-- SECTION 3: SCENES & MOTION MATRIX                    -->
-    <!-- ==================================================== -->
+    <!-- ============================================================== -->
+    <!-- SECTION 3: SCENES & MOTION MATRIX                              -->
+    <!-- ============================================================== -->
     <section id="sec-scenes" class="hidden space-y-6">
       
-      <div class="glass-panel rounded-2xl p-6 space-y-4">
+      <div class="glass-card rounded-2xl p-6 space-y-4">
         <div class="flex items-center justify-between border-b border-white/10 pb-4">
           <div>
             <h3 class="text-lg font-black text-white">مصفوفة المشاهد والإخراج العضوي</h3>
@@ -325,45 +323,58 @@
 
     </section>
 
-    <!-- ==================================================== -->
-    <!-- SECTION 4: CLOUD RENDER & MP4 EXPORT                 -->
-    <!-- ==================================================== -->
+    <!-- ============================================================== -->
+    <!-- SECTION 4: REAL CLOUD RENDER (GITHUB ACTIONS API)              -->
+    <!-- ============================================================== -->
     <section id="sec-render" class="hidden space-y-6">
       
-      <div class="glass-panel rounded-2xl p-8 space-y-6 border border-amber-500/30 text-center">
+      <div class="glass-card rounded-2xl p-8 space-y-6 border border-amber-500/30 text-center">
         
         <div class="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 mx-auto flex items-center justify-center text-3xl">
           ☁️
         </div>
 
         <div class="max-w-xl mx-auto space-y-2">
-          <h3 class="text-xl font-black text-white">الرندرة السحابية الفائقة (GitHub Actions)</h3>
+          <h3 class="text-xl font-black text-white">الرندرة السحابية الحقيقية (GitHub Actions)</h3>
           <p class="text-xs text-slate-400">
             تتم معالجة جميع الطبقات وحركات الكاميرا ثلاثية الأبعاد والمؤثرات بالكامل على سيرفرات سحابية قوية دون أي استهلاك لمعالج أو رام جهازك.
           </p>
         </div>
 
         <div class="flex justify-center gap-4 pt-2">
-          <button onclick="triggerCloudRender()" id="btn-cloud-render" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-sm shadow-xl shadow-amber-500/25 transition flex items-center gap-2">
+          <button onclick="startRealCloudRender()" id="btn-cloud-render" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-sm shadow-xl shadow-amber-500/25 transition flex items-center gap-2">
             <span>🚀</span>
             <span id="render-btn-label">بدء الرندرة السحابية الآن</span>
           </button>
         </div>
 
         <!-- Render Progress & Status Box -->
-        <div id="render-status-box" class="max-w-2xl mx-auto p-4 rounded-xl bg-[#080A10] border border-white/10 text-right space-y-3 hidden">
+        <div id="render-status-box" class="max-w-2xl mx-auto p-5 rounded-xl bg-[#07090E] border border-white/10 text-right space-y-3 hidden">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-mono font-bold text-amber-400" id="render-status-title">جاري الاتصال بالسيرفر السحابي...</span>
-            <span class="text-[11px] font-mono text-slate-400" id="render-run-id"></span>
+            <span class="text-xs font-mono font-bold text-amber-400 flex items-center gap-2" id="render-status-title">
+              <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+              <span>جاري الاتصال بالسيرفر السحابي...</span>
+            </span>
+            <span class="text-[11px] font-mono text-slate-400" id="render-timer-text">00:00</span>
           </div>
+
           <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
             <div id="render-progress-bar" class="bg-amber-500 h-2 rounded-full transition-all duration-500" style="width: 15%"></div>
           </div>
-          <p class="text-xs text-slate-300" id="render-status-desc">جاري تحضير بيئة العمل وتركيب الطبقات...</p>
-          <div id="download-container" class="pt-2 hidden text-center">
-            <a id="download-final-video-btn" href="#" target="_blank" class="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs inline-flex items-center gap-2 shadow-lg shadow-emerald-500/30">
+
+          <p class="text-xs text-slate-300" id="render-status-desc">جاري إرسال إشارة التشغيل لسيرفر GitHub Actions...</p>
+          
+          <div class="text-xs text-slate-400 flex items-center justify-between border-t border-white/5 pt-2" id="render-details-row">
+            <span>سيرفر المعالجة: <strong class="text-white font-mono">Ubuntu 22.04 LTS (Remotion 60fps)</strong></span>
+            <a id="render-live-logs-link" href="https://github.com/essamalhadad654-alt/collage-cloud-studio/actions" target="_blank" class="text-amber-400 hover:underline flex items-center gap-1">
+              <span>عرض سجل التشغيل الحي</span><span>↗</span>
+            </a>
+          </div>
+
+          <div id="download-container" class="pt-3 hidden text-center">
+            <a id="download-final-video-btn" href="#" target="_blank" class="px-7 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs inline-flex items-center gap-2 shadow-lg shadow-emerald-500/30">
               <span>📥</span>
-              <span>تحميل الفيديو النهائي (MP4 بجودة عالية)</span>
+              <span>تحميل ملف الفيديو النهائي (MP4)</span>
             </a>
           </div>
         </div>
@@ -374,29 +385,91 @@
 
   </main>
 
-  <!-- ========================================== -->
-  <!-- MODAL: MANUAL PASTE (OPTIONAL)             -->
-  <!-- ========================================== -->
-  <div id="paste-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="glass-panel rounded-2xl max-w-2xl w-full p-6 space-y-4 border border-amber-500/40 shadow-2xl">
+  <!-- ============================================================== -->
+  <!-- MODAL 1: PROJECTS GALLERY (GOOGLE FLOW STYLE CARDS)            -->
+  <!-- ============================================================== -->
+  <div id="projects-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-6">
+    <div class="glass-card rounded-3xl max-w-4xl w-full p-7 space-y-6 border border-white/15 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <div>
+          <h3 class="text-lg font-black text-white flex items-center gap-2">
+            <span>🗂️</span>
+            <span>مشاريعي المحفوظة (معرض المشاريع)</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">اختر مشروعاً سابقاً لفتحه، أو ابدأ مشروعاً جديداً تماماً من الصفر:</p>
+        </div>
+        <button onclick="closeProjectsModal()" class="text-slate-400 hover:text-white text-xl p-1">✕</button>
+      </div>
+
+      <!-- Projects Grid (Cards) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="projects-cards-grid">
+        
+        <!-- CARD 1: BLANK / NEW -->
+        <div onclick="selectProjectFromGallery('blank')" class="glass-card p-5 rounded-2xl border-2 border-dashed border-amber-500/40 hover:border-amber-400 cursor-pointer transition flex flex-col justify-between h-56 bg-amber-500/5 hover:bg-amber-500/10 group">
+          <div class="space-y-2">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition">
+              ✨
+            </div>
+            <h4 class="text-sm font-extrabold text-white">بدء مشروع جديد فارغ</h4>
+            <p class="text-[11px] text-slate-400 leading-relaxed">تصفير الاستوديو بالكامل والبدء بجلسة عمل نظيفة جاهزة لاستقبال ملف PDF جديد.</p>
+          </div>
+          <button class="w-full py-2 rounded-xl bg-amber-500 text-black font-extrabold text-xs">جلسة عمل جديدة ↗</button>
+        </div>
+
+        <!-- CARD 2: NASIHA CAIRO 1930s -->
+        <div onclick="selectProjectFromGallery('nasiha-cairo')" class="glass-card p-5 rounded-2xl border border-white/10 hover:border-purple-500/50 cursor-pointer transition flex flex-col justify-between h-56 bg-[#0E121E] group">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">7 مشاهد • 25.5s</span>
+              <span class="text-xs">📜</span>
+            </div>
+            <h4 class="text-sm font-extrabold text-white group-hover:text-amber-400 transition">نصيحة لك في هذه الدنيا</h4>
+            <p class="text-[11px] text-slate-400 leading-relaxed">القاهرة الثلاثينيات • 7 خلفيات مسرح مادي • 13 قصاصة شخصية • مقطعي كروما.</p>
+          </div>
+          <button class="w-full py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs">فتح المشروع ↗</button>
+        </div>
+
+        <!-- CARD 3: KITMAN 58 SCENES -->
+        <div onclick="selectProjectFromGallery('alkitman-58')" class="glass-card p-5 rounded-2xl border border-white/10 hover:border-sky-500/50 cursor-pointer transition flex flex-col justify-between h-56 bg-[#0E121E] group">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">58 مشهداً • 4:04m</span>
+              <span class="text-xs">🎬</span>
+            </div>
+            <h4 class="text-sm font-extrabold text-white group-hover:text-amber-400 transition">الكتمان — يوسف ويعقوب</h4>
+            <p class="text-[11px] text-slate-400 leading-relaxed">وثائقي تاريخي كنعاني ملحمي كامل • 11 خلفية • 20 قصاصة • 6 فيديوهات كروما.</p>
+          </div>
+          <button class="w-full py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs">فتح المشروع ↗</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 2: MANUAL PASTE TEXT                                     -->
+  <!-- ============================================================== -->
+  <div id="paste-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-6">
+    <div class="glass-card rounded-2xl max-w-2xl w-full p-6 space-y-4 border border-amber-500/40 shadow-2xl">
       <div class="flex items-center justify-between border-b border-white/10 pb-3">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
           <span>📋</span>
           <span>لصق مخرجات كلود يدوياً</span>
         </h3>
-        <button onclick="closeManualPasteModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+        <button onclick="closePasteModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
       <p class="text-xs text-slate-300">الصق نص السكريبت أو البرومبتات مباشرة، وسيقوم النظام بفرز الصناديق الثلاثة فوراً:</p>
-      <textarea id="modal-paste-area" rows="8" class="w-full p-3.5 rounded-xl bg-[#080A10] border border-white/15 text-xs font-mono text-white placeholder:text-slate-500" placeholder="bg1: ... fg1: ... c1: ..."></textarea>
+      <textarea id="modal-paste-area" rows="8" class="w-full p-3.5 rounded-xl bg-[#07090E] border border-white/15 text-xs font-mono text-white placeholder:text-slate-500" placeholder="bg1: ... fg1: ... c1: ..."></textarea>
       <div class="flex justify-end gap-2">
-        <button onclick="closeManualPasteModal()" class="px-4 py-2 rounded-xl bg-white/10 text-xs text-white">إلغاء</button>
+        <button onclick="closePasteModal()" class="px-4 py-2 rounded-xl bg-white/10 text-xs text-white">إلغاء</button>
         <button onclick="parseFromPasteArea()" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs">فرز وتحديث الصناديق ⚡</button>
       </div>
     </div>
   </div>
 
-  <!-- LOAD DATA & APPLICATION SCRIPT -->
-  <script src="data.js?v=1794496418"></script>
-  <script src="app.js?v=1794496418"></script>
+  <!-- SCRIPTS -->
+  <script src="data.js?v=1794498922"></script>
+  <script src="app.js?v=1794498922"></script>
 </body>
 </html>
