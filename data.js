@@ -1,4 +1,5 @@
-window.DEEPCOLLAGE_DATA = {
+// DeepCollage Studio Universal Production Data
+window.DEFAULT_KITMAN_BACKUP = {
   "project": {
     "name": "الكتمان — قصة يوسف ويعقوب (58 مشهداً)",
     "slug": "alkitman-58-scenes",
@@ -1001,6 +1002,269 @@ window.DEEPCOLLAGE_DATA = {
       "clips": [],
       "caption": "ما ازدادوا فينا الا حبا"
     }
+  ]
+};
+window.DEFAULT_NASIHA_BACKUP = {
+  "project": {
+    "name": "نصيحة لك في هذه الدنيا — القاهرة الثلاثينيات (7 مشاهد)",
+    "slug": "nasiha-cairo-1930s",
+    "durationSec": 25.5,
+    "fps": 30,
+    "totalFrames": 765,
+    "resolution": "1080x1920 (9:16)",
+    "githubRepo": "essamalhadad654-alt/collage-cloud-studio",
+    "lastRenderRunId": "42523940058",
+    "creditsTotal": 500,
+    "creditsUsed": 0,
+    "plan": "Founder Unlimited Tier"
+  },
+  "bgPrompts": [
+    {
+      "id": "bg1",
+      "file": "BG1.jpg",
+      "title": "زقاق القاهرة القديمة عند الغسق (أرضية حجرية ومشارب خشبية)",
+      "prompt": "bg1: Archival documentary photograph, old Cairo alley at dusk, 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, soft halation around lights, photorealistic, editorial collage look. Narrow stone alley with weathered mashrabiya balconies receding into haze, open space in the center. In the lower third, a solid grounded physical stage: damp cobblestone street. Wide shot, dramatic lighting, no people in the foreground. No text, no watermark."
+    },
+    {
+      "id": "bg2",
+      "file": "BG2.jpg",
+      "title": "سوق القاهرة المسقوف (ممر البازار وأرضية البلاط الأثري)",
+      "prompt": "bg2: Archival documentary photograph, old Cairo covered market street, 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, soft halation around lights, photorealistic, editorial collage look. Long dim bazaar corridor with hanging lanterns and arches, open space in the center. In the lower third, a solid grounded physical stage: worn flagstone floor. Wide shot, dramatic lighting, no people in the foreground. No text, no watermark."
+    },
+    {
+      "id": "bg3",
+      "file": "BG3.jpg",
+      "title": "مقهى قاهري تقليدي (طاولة خشبية عتيقة وأرضية مبلطة)",
+      "prompt": "bg3: Archival documentary photograph, interior of a traditional Cairo coffeehouse, 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, soft halation around lights, photorealistic, editorial collage look. Dim room with carved wooden walls and a window with shafts of amber light, open space in the center. In the lower third, a solid grounded physical stage: old wooden table and tiled floor. Wide shot, dramatic lighting, no people in the foreground. No text, no watermark."
+    },
+    {
+      "id": "bg4",
+      "file": "BG4.jpg",
+      "title": "فناء قاهري عتيق هادئ (بوابة مقوسة وأرضية حجر رملي)",
+      "prompt": "bg4: Archival documentary photograph, quiet old Cairo courtyard at late afternoon, 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, soft halation around lights, photorealistic, editorial collage look. Stone courtyard with an arched doorway and a single hanging lantern, open space in the center. In the lower third, a solid grounded physical stage: sandstone floor with soft contact shadows. Wide shot, dramatic lighting, no people in the foreground. No text, no watermark."
+    },
+    {
+      "id": "bg5",
+      "file": "BG5.jpg",
+      "title": "زقاق قاهري خلفي ليلي (باب خشبي ومصباح دافئ وعتبة حجرية)",
+      "prompt": "bg5: Archival documentary photograph, narrow Cairo back street at night, 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, soft halation around lights, photorealistic, editorial collage look. Dark alley with a wooden door and a single warm lamp glow on the wall, open space in the center. In the lower third, a solid grounded physical stage: dusty stone doorstep and street. Wide shot, dramatic lighting, no people in the foreground. No text, no watermark."
+    },
+    {
+      "id": "bg6",
+      "file": "BG6.jpg",
+      "title": "شرفة سطح تطل على مآذن القاهرة عند ساعة الغروب الذهبية",
+      "prompt": "bg6: Archival documentary photograph, flat rooftop terrace overlooking old Cairo at golden hour, 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, soft halation around lights, photorealistic, editorial collage look. Distant domes and minarets in warm haze, open space in the center. In the lower third, a solid grounded physical stage: rough plaster rooftop floor with a low parapet. Wide shot, dramatic lighting, no people in the foreground. No text, no watermark."
+    },
+    {
+      "id": "bg7",
+      "file": "BG7.jpg",
+      "title": "شرفة السطح عند أول خيوط فجر القاهرة (سماء شاحبة ومئذنة بعيدة)",
+      "prompt": "bg7: Archival documentary photograph, rooftop terrace in old Cairo at first light of dawn, 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, soft halation around lights, photorealistic, editorial collage look. Vast pale sky with soft rays breaking through clouds and a distant slender minaret silhouette, open space in the center. In the lower third, a solid grounded physical stage: stone rooftop floor with a dark parapet. Wide shot, dramatic lighting, no people in the foreground. No text, no watermark."
+    }
+  ],
+  "fgPrompts": [
+    {
+      "id": "fg1",
+      "file": "FG1.jpg",
+      "title": "الرجل الوقور بعباءة صوف داكنة وتاربوش (واقف بثبات ويداه خلف ظهره)",
+      "prompt": "fg1: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. A dignified Arab man in his thirties, short dark beard, wearing a dark wool bisht over a cream linen galabeya and a tarboush, standing upright with hands clasped behind his back, calm confident gaze at camera, full figure standing on a small patch of cobblestone. Authentic tactile paper cutout look with subtle crisp edge, isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg1a",
+      "file": "FG1a.jpg",
+      "title": "عمود الفانوس الحديدي الأثري مع زجاج متوهج",
+      "prompt": "fg1a: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. An antique iron street lamppost with a glowing glass lantern, base on a small patch of stone. Isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg2",
+      "file": "FG2.jpg",
+      "title": "الرجل الوقور يبتعد بخطوات ثابتة من الخلف",
+      "prompt": "fg2: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. The same dignified Arab man in dark wool bisht and tarboush, seen from behind, walking away with a steady stride, head level, full figure with feet on a patch of flagstone. Authentic tactile paper cutout look with subtle crisp edge, isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg2a",
+      "file": "FG2a.jpg",
+      "title": "مجموعة من أربعة رجال مصريين بالجلاليب والطرابيش يتهامسون في الظل",
+      "prompt": "fg2a: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. A small group of four Arab men in galabeyas and tarbooshes standing close together in dim light, whispering and glancing sideways with skeptical expressions, full figures on a patch of flagstone. Isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg3",
+      "file": "FG3.jpg",
+      "title": "الرجل الوقور جالس على طاولة يسكب الشاي بهدوء من إبريق نحاسي",
+      "prompt": "fg3: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. The same dignified Arab man in dark wool bisht and tarboush, seated at a small wooden table, calmly pouring tea from a brass teapot into a small glass, relaxed shoulders, eyes lowered, table and chair included. Authentic tactile paper cutout look with subtle crisp edge, isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg3a",
+      "file": "FG3a.jpg",
+      "title": "ثلاثة رجال جالسون على طاولة مقهى بعيدة مع شيشة يتهامسون",
+      "prompt": "fg3a: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. Three Arab men in galabeyas seated at a distant coffeehouse table, leaning toward each other whispering, with a water pipe on the table, in dim shadow. Isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg4",
+      "file": "FG4.jpg",
+      "title": "الرجل الوقور نصف جسم مع يد موضوعة بهدوء على الصدر وعينين مغمضتين",
+      "prompt": "fg4: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. The same dignified Arab man in dark wool bisht and tarboush, waist-up, one hand resting gently on his chest, eyes softly closed, serene sincere expression. Authentic tactile paper cutout look with subtle crisp edge, isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg4a",
+      "file": "FG4a.jpg",
+      "title": "مقعد خشبي منقوش أثري مع قماش مطوي وإبريق فخاري للماء",
+      "prompt": "fg4a: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. An old carved wooden bench with a folded cloth and a clay water jug on it, grounded on a patch of sandstone. Isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg5",
+      "file": "FG5.jpg",
+      "title": "الرجل الوقور ينحني برفق ليضع صرة خبز على عتبة الباب",
+      "prompt": "fg5: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. The same dignified Arab man in dark wool bisht and tarboush, in profile, crouching slightly to quietly place a cloth bundle of bread on a doorstep, gentle humble gesture, full figure on a patch of stone. Authentic tactile paper cutout look with subtle crisp edge, isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg5a",
+      "file": "FG5a.jpg",
+      "title": "باب خشبي عتيق بإطار حجري ومطرقة حديدية وعتبة حجرية متهالكة",
+      "prompt": "fg5a: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. A weathered wooden door set in a stone frame with an iron knocker and a worn stone step, closed. Isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg6",
+      "file": "FG6.jpg",
+      "title": "الرجل الوقور جالس على مقعد منخفض فوق السطح ينظر بهدوء نحو الأفق",
+      "prompt": "fg6: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. The same dignified Arab man in dark wool bisht and tarboush, seated on a low stool on a rooftop, relaxed upright posture, hands resting on knees, peaceful gaze toward the horizon, full figure. Authentic tactile paper cutout look with subtle crisp edge, isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg6a",
+      "file": "FG6a.jpg",
+      "title": "جمع بعيد باهت من الشخصيات المصرية في الظل بأظهر شبه ملتفة",
+      "prompt": "fg6a: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. A distant crowd of small blurred Arab figures in galabeyas and tarbooshes standing in a loose group with their backs half turned, faded and desaturated. Isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    },
+    {
+      "id": "fg7",
+      "file": "FG7.jpg",
+      "title": "الرجل الوقور من الخلف يقف عند سور السطح رافعاً وجهه نحو السماء",
+      "prompt": "fg7: Archival documentary photograph, Cairo 1930s, shot on a large-format camera, rich tactile organic film grain, dramatic chiaroscuro lighting, faded teal shadows and warm amber highlights, high contrast, photorealistic, editorial collage look. The same dignified Arab man in dark wool bisht and tarboush, seen from behind and slightly from the side, standing at a rooftop parapet, face lifted toward the sky, one hand resting on the parapet, quiet humility, full figure. Authentic tactile paper cutout look with subtle crisp edge, isolated on a solid pure flat white background #FFFFFF, evenly lit, clean sharp edges for cutout. No text, no watermark."
+    }
+  ],
+  "clipPrompts": [
+    {
+      "id": "c1",
+      "file": "C1.mp4",
+      "title": "بخار شاي رقيق يتصاعد بتموج بطيء فوق الكوب",
+      "prompt": "c1: Locked-off static camera, no camera movement, no zoom, same framing and same lighting for the whole shot. A small brass teapot and a glass of hot tea stay in exactly the same position. Soft thin steam rises slowly and curls from the glass. The plain flat chroma green background stays perfectly flat, pure #00FF00, evenly lit and unchanged. No particles, no text, no music, no voice."
+    },
+    {
+      "id": "c2",
+      "file": "C2.mp4",
+      "title": "غبار دافئ رقيق وضباب ضوئي يعوم في عمود نور الفجر",
+      "prompt": "c2: Locked-off static camera, no camera movement, no zoom, same framing and same lighting for the whole shot. A drifting veil of fine warm dust and light haze floats gently in place in a single column of light. The plain flat chroma green background stays perfectly flat, pure #00FF00, evenly lit and unchanged. No particles, no text, no music, no voice."
+    }
+  ],
+  "scenes": [
+    {
+      "id": 1,
+      "t0": 0.0,
+      "t1": 4.0,
+      "duration": 4.0,
+      "bg": "BG1.jpg",
+      "fgs": [
+        "FG1a.jpg",
+        "FG1.jpg"
+      ],
+      "clips": [],
+      "caption": "نصيحة لك في هذه الدنيا",
+      "camera": "دفع أمامي بطيء push-in z+800 مع تشويش الخلفية. الانتقال: قطع بالحبيبات",
+      "motion": "fg1: تنفس خفيف في الصدر، رفع الذقن ببطء مع ثبات النظرة | fg1a: وميض خفيف في ضوء الفانوس"
+    },
+    {
+      "id": 2,
+      "t0": 4.0,
+      "t1": 7.5,
+      "duration": 3.5,
+      "bg": "BG2.jpg",
+      "fgs": [
+        "FG2a.jpg",
+        "FG2.jpg"
+      ],
+      "clips": [],
+      "caption": "",
+      "camera": "انجراف جانبي x-300 drift مع ابتعاد البطل عن الجماعة",
+      "motion": "fg2: خطوات هادئة مع هز طفيف في الكتفين | fg2a: إيماءات رأس وهمس جانبي في الظل"
+    },
+    {
+      "id": 3,
+      "t0": 7.5,
+      "t1": 12.0,
+      "duration": 4.5,
+      "bg": "BG3.jpg",
+      "fgs": [
+        "FG3a.jpg",
+        "FG3.jpg"
+      ],
+      "clips": [
+        "C1.mp4"
+      ],
+      "caption": "",
+      "camera": "دفع أمامي هادئ على الطاولة z+500 مع بقاء البطل في بؤرة الوضوح",
+      "motion": "fg3: سكب شاي بطيء، تنفس هادئ، لا يرفع عينيه | fg3a: تمايل رؤوس متقاربة | c1: بخار الشاي"
+    },
+    {
+      "id": 4,
+      "t0": 12.0,
+      "t1": 15.0,
+      "duration": 3.0,
+      "bg": "BG4.jpg",
+      "fgs": [
+        "FG4a.jpg",
+        "FG4.jpg"
+      ],
+      "clips": [],
+      "caption": "فالقلب الصادق لا يحتاج توضيحاً",
+      "camera": "اقتراب بطيء نحو الوجه z+600 مع تقليل عمق الميدان",
+      "motion": "fg4: تنفس عميق، يد على الصدر، رمشة بطيئة وهدوء الوجه"
+    },
+    {
+      "id": 5,
+      "t0": 15.0,
+      "t1": 18.0,
+      "duration": 3.0,
+      "bg": "BG5.jpg",
+      "fgs": [
+        "FG5a.jpg",
+        "FG5.jpg"
+      ],
+      "clips": [],
+      "caption": "",
+      "camera": "انجراف أفقي x+250 drift مع إضاءة المصباح على الباب",
+      "motion": "fg5: انحناء بطيء لوضع الصرة، ثم اعتدال وتراجع خطوة"
+    },
+    {
+      "id": 6,
+      "t0": 18.0,
+      "t1": 22.0,
+      "duration": 4.0,
+      "bg": "BG6.jpg",
+      "fgs": [
+        "FG6a.jpg",
+        "FG6.jpg"
+      ],
+      "clips": [],
+      "caption": "",
+      "camera": "اقتراب بطيء مع عمق: الجمع البعيد يتراجع والبطل يقترب z+700",
+      "motion": "fg6: تنفس عميق وبطيء، رفع الكتفين ثم إرخاؤهما | fg6a: حركة طفيفة جداً وباهتة"
+    },
+    {
+      "id": 7,
+      "t0": 22.0,
+      "t1": 25.5,
+      "duration": 3.5,
+      "bg": "BG7.jpg",
+      "fgs": [
+        "FG7.jpg"
+      ],
+      "clips": [
+        "C2.mp4"
+      ],
+      "caption": "ورضى الله غاية لا تترك",
+      "camera": "دفع أمامي ثم صعود طفيف z+800 / y-150. تلاشٍ بطيء إلى الأسود",
+      "motion": "fg7: رفع الرأس ببطء نحو السماء، تنفس هادئ، ثبات اليد على السور | c2: غبار وضوء"
+    }
   ],
   "niches": [
     {
@@ -1132,3 +1396,4 @@ window.DEEPCOLLAGE_DATA = {
     }
   ]
 };
+window.DEEPCOLLAGE_DATA = window.DEFAULT_NASIHA_BACKUP;

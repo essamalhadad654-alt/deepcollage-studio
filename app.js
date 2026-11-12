@@ -105,14 +105,14 @@ function switchProject(val) {
     createNewProjectPrompt();
     return;
   }
-  if (val === "alkitman-58") {
-    activeProjectSlug = "alkitman-58";
-    // Restore kitman data
-    DATA.project = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.project));
-    DATA.bgPrompts = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.bgPrompts));
-    DATA.fgPrompts = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.fgPrompts));
-    DATA.clipPrompts = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.clipPrompts));
-    DATA.scenes = JSON.parse(JSON.stringify(DEFAULT_KITMAN_BACKUP.scenes));
+  if (val === "nasiha-cairo") {
+    activeProjectSlug = "nasiha-cairo-1930s";
+    const src = window.DEFAULT_NASIHA_BACKUP || DEEPCOLLAGE_DATA;
+    DATA.project = JSON.parse(JSON.stringify(src.project));
+    DATA.bgPrompts = JSON.parse(JSON.stringify(src.bgPrompts));
+    DATA.fgPrompts = JSON.parse(JSON.stringify(src.fgPrompts));
+    DATA.clipPrompts = JSON.parse(JSON.stringify(src.clipPrompts));
+    DATA.scenes = JSON.parse(JSON.stringify(src.scenes));
 
     renderPromptBoxes();
     renderAssetMatrix();
@@ -120,7 +120,26 @@ function switchProject(val) {
     selectScene(1);
     renderCloudNodes();
     updateDynamicUIHeaders();
-    alert(`📁 تم فتح واسترجاع مشروع الكتمان (${DATA.scenes.length} مشهداً) بنجاح!`);
+    return;
+  }
+  if (val === "alkitman-58") {
+    activeProjectSlug = "alkitman-58";
+    const src = window.DEFAULT_KITMAN_BACKUP;
+    if (src) {
+      DATA.project = JSON.parse(JSON.stringify(src.project));
+      DATA.bgPrompts = JSON.parse(JSON.stringify(src.bgPrompts));
+      DATA.fgPrompts = JSON.parse(JSON.stringify(src.fgPrompts));
+      DATA.clipPrompts = JSON.parse(JSON.stringify(src.clipPrompts));
+      DATA.scenes = JSON.parse(JSON.stringify(src.scenes));
+
+      renderPromptBoxes();
+      renderAssetMatrix();
+      renderSceneList("");
+      selectScene(1);
+      renderCloudNodes();
+      updateDynamicUIHeaders();
+    }
+    return;
   }
 }
 
