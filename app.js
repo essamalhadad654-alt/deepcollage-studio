@@ -756,7 +756,18 @@ async function startRealCloudRender() {
       latestRunIdBefore = preData.workflow_runs?.[0]?.id;
     }
 
-    // 2. Real dispatch call to GitHub Actions
+    // 2. Sync Current Project JSON to GitHub before dispatch
+    title.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span><span>جاري مزامنة بيانات المشروع (${(DATA.scenes || []).length} مشاهد) مع السيرفر...</span>`;
+    desc.textContent = "جاري رفع مواصفات المشاهد والتوقيت إلى السيرفر السحابي...";
+    bar.style.width = "25%";
+
+    const currentProjectPayload = {
+      project: DATA.project || { name: "Universal Project", durationSec: (DATA.scenes || []).length * 3.6, fps: 30 },
+      scenes: DATA.scenes || []
+    };
+    await uploadProjectJsonToGitHub(currentProjectPayload);
+
+    // 3. Real dispatch call to GitHub Actions (Universal Dynamic Render)
     const dispatchRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/render.yml/dispatches`, {
       method: "POST",
       headers: {
@@ -764,7 +775,7 @@ async function startRealCloudRender() {
         "Accept": "application/vnd.github.v3+json",
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ ref: "main", inputs: { composition: "Collage" } })
+      body: JSON.stringify({ ref: "main", inputs: { projectName: currentProjectPayload.project.name } })
     });
 
     if (!dispatchRes.ok && dispatchRes.status !== 204) {
@@ -772,17 +783,48 @@ async function startRealCloudRender() {
       console.warn("Dispatch status:", dispatchRes.status, errTxt);
     }
 
-    title.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span><span>تم إرسال أمر التشغيل! جاري بدء مهمة جديدة...</span>`;
-    desc.textContent = "سيرفر GitHub Actions يستلم أمر التشغيل ويجهز حاوية Ubuntu (تستغرق ثوانٍ معدودة)...";
-    bar.style.width = "30%";
+    title.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span><span>تم تشغيل السيرفر السحابي بنجاح لمشروعك الحالي!</span>`;
+    desc.textContent = `سيرفر Ubuntu يقوم الآن برندرة ${currentProjectPayload.scenes.length} مشاهد (المدة: ${currentProjectPayload.project.durationSec.toFixed(1)} ثانية)...`;
+    bar.style.width = "40%";
 
-    // 3. Poll ONLY the new run from GitHub
+    // 4. Poll ONLY the new run from GitHub
     pollRealGitHubRun(latestRunIdBefore, dispatchStartTime);
 
   } catch (err) {
     console.error("Render trigger error:", err);
     desc.textContent = `ملاحظة: حدث خطأ في الاتصال بالسيرفر: ${err.message}`;
     bar.style.width = "50%";
+  }
+}
+
+async function uploadProjectJsonToGitHub(payload) {
+  try {
+    const jsonStr = JSON.stringify(payload, null, 2);
+    const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+    let sha = null;
+    const getRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/public/project.json`, {
+      headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Accept": "application/vnd.github.v3+json" }
+    });
+    if (getRes.ok) {
+      const getJson = await getRes.json();
+      sha = getJson.sha;
+    }
+    const putBody = {
+      message: `Universal Render: Set project ${payload.project?.name || 'dynamic'}`,
+      content: b64
+    };
+    if (sha) putBody.sha = sha;
+    await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/public/project.json`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `token ${GITHUB_TOKEN}`,
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(putBody)
+    });
+  } catch (e) {
+    console.warn("Project sync error:", e);
   }
 }
 
